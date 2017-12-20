@@ -18,8 +18,6 @@ double USER_STOP_LOSS=0.0;
 double USER_TRAIL_STOP_LOSS=0.0;
 int USER_MAGIC_LONG=100;                                             // Identifies this EA's long positions
 int USER_MAGIC_SHORT=200;                                            // Identifies this EA's short positions
-double USER_SMA_OPENING_THRESHOLD=0.0;                               // SMA threshold for increased position size
-double USER_SMA_CLOSING_THRESHOLD=0.0;                               // SMA Threshold to close trade
 extern int USER_TAKE_PROFIT_PIPS=1000;                               // Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=500;                                  // Stop Loss in pips
 extern int USER_TRAIL_STOP_LOSS_PIPS=500;                            // Trail Stop Loss distance in pips
@@ -43,8 +41,6 @@ int OnInit()
    USER_TAKE_PROFIT = USER_TAKE_PROFIT_PIPS * Point;
    USER_STOP_LOSS = USER_STOP_LOSS_PIPS * Point;
    USER_TRAIL_STOP_LOSS = USER_TRAIL_STOP_LOSS_PIPS * Point;
-   USER_SMA_OPENING_THRESHOLD = 200 * Point;
-   USER_SMA_CLOSING_THRESHOLD = 50 * Point;
    
    Alert("Init Symbol=", Symbol(), ", TP=", USER_TAKE_PROFIT,
       ", SL=", USER_STOP_LOSS, ", TrailSL=", USER_TRAIL_STOP_LOSS);
