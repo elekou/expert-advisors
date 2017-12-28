@@ -18,10 +18,11 @@ double USER_STOP_LOSS=0.0;
 double USER_TRAIL_STOP_LOSS=0.0;
 int USER_MAGIC_LONG=100;                                             // Identifies this EA's long positions
 int USER_MAGIC_SHORT=200;                                            // Identifies this EA's short positions
+double USER_MACD_THRESHOLD=0.0;
 extern int USER_TAKE_PROFIT_PIPS=1000;                               // Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=500;                                  // Stop Loss in pips
 extern int USER_TRAIL_STOP_LOSS_PIPS=500;                            // Trail Stop Loss distance in pips
-extern int USER_MACD_DELAY_BARS=0;                                   // How many bars to delay MACD evaluation
+extern int USER_MACD_THRESHOLD_PIPS=25;                              // MACD signal threshold to allow trading
 extern double USER_POSITION=0.02;                                    // Base of position size calculations
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
 
@@ -41,6 +42,7 @@ int OnInit()
    USER_TAKE_PROFIT = USER_TAKE_PROFIT_PIPS * Point;
    USER_STOP_LOSS = USER_STOP_LOSS_PIPS * Point;
    USER_TRAIL_STOP_LOSS = USER_TRAIL_STOP_LOSS_PIPS * Point;
+   USER_MACD_THRESHOLD = USER_MACD_THRESHOLD_PIPS * Point;
    
    Alert("Init Symbol=", Symbol(), ", TP=", USER_TAKE_PROFIT,
       ", SL=", USER_STOP_LOSS, ", TrailSL=", USER_TRAIL_STOP_LOSS);
@@ -66,10 +68,10 @@ void OnTick()
       return;
       
    // Re-calculate indicators
-   macd_main = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_MAIN, USER_MACD_DELAY_BARS), Digits);
-   macd_main_prev = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_MAIN, USER_MACD_DELAY_BARS+1), Digits);
-   macd_signal = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_SIGNAL, USER_MACD_DELAY_BARS), Digits);
-   macd_signal_prev = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_SIGNAL, USER_MACD_DELAY_BARS+1), Digits);
+   macd_main = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_MAIN, 0), Digits);
+   macd_main_prev = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_MAIN, 1), Digits);
+   macd_signal = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_SIGNAL, 0), Digits);
+   macd_signal_prev = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_SIGNAL, 1), Digits);
 
    // Check conditions to close long
    if (!UptrendConfirmed() && LongIsOpen())
@@ -179,7 +181,8 @@ bool UptrendOpeningConfirmed()
 {  
    return (
          macd_main > 0 &&
-         macd_main_prev < 0
+         macd_main_prev < 0 &&
+         MathAbs(macd_signal) > USER_MACD_THRESHOLD
       );
 }
 
@@ -192,7 +195,8 @@ bool DowntrendOpeningConfirmed()
 {
    return (
          macd_main < 0 &&
-         macd_main_prev > 0
+         macd_main_prev > 0 &&
+         MathAbs(macd_signal) > USER_MACD_THRESHOLD
       );
 }
 
