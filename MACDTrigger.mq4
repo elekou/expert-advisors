@@ -21,7 +21,7 @@ int USER_MAGIC_SHORT=200;                                            // Identifi
 double USER_MACD_THRESHOLD=0.0;
 extern int USER_TAKE_PROFIT_PIPS=1000;                               // Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=500;                                  // Stop Loss in pips
-extern int USER_TRAIL_STOP_LOSS_PIPS=500;                            // Trail Stop Loss distance in pips
+extern int USER_TRAIL_STOP_LOSS_PIPS=300;                            // Trail Stop Loss distance in pips
 extern int USER_MACD_THRESHOLD_PIPS=25;                              // MACD signal threshold to allow trading
 extern double USER_POSITION=0.02;                                    // Base of position size calculations
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
@@ -110,12 +110,11 @@ void OnTick()
       double openPrice = FindOpenPrice(ticketLong);
       double stopLoss = FindStopLoss(ticketLong);
       if (
-            Open[0] - openPrice > USER_TRAIL_STOP_LOSS &&
-            stopLoss < openPrice
+            Open[0] - stopLoss > USER_STOP_LOSS + USER_TRAIL_STOP_LOSS
          )
          
       {
-         TrailStopLoss(ticketLong, NormalizeDouble(openPrice + 30 * Point, Digits));
+         TrailStopLoss(ticketLong, NormalizeDouble(stopLoss + USER_TRAIL_STOP_LOSS + 30 * Point, Digits));
       }
    }
    
@@ -126,11 +125,10 @@ void OnTick()
       double openPrice = FindOpenPrice(ticketShort);
       double stopLoss = FindStopLoss(ticketShort);
       if (
-            openPrice - Open[0] > USER_TRAIL_STOP_LOSS &&
-            stopLoss > openPrice
+            stopLoss - Open[0] > USER_STOP_LOSS + USER_TRAIL_STOP_LOSS
          )
       {
-         TrailStopLoss(ticketShort, NormalizeDouble(openPrice - 30 * Point, Digits));
+         TrailStopLoss(ticketShort, NormalizeDouble(stopLoss - USER_TRAIL_STOP_LOSS - 30 * Point, Digits));
       }
    }
 }
