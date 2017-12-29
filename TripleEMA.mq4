@@ -20,7 +20,7 @@ int USER_MAGIC_LONG=850;                                             // Identifi
 int USER_MAGIC_SHORT=950;                                            // Identifies this EA's short positions
 extern int USER_TAKE_PROFIT_PIPS=3000;                               // Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=500;                                  // Stop Loss in pips
-extern int USER_TRAIL_STOP_LOSS_PIPS=500;                            // Trail Stop Loss distance in pips
+extern int USER_TRAIL_STOP_LOSS_PIPS=300;                            // Trail Stop Loss distance in pips
 extern int USER_LONG_EMA_THRESHOLD_PIPS=100;                         // Maximum distance between long and medium EMA
 extern int USER_SHORT_EMA_THRESHOLD_PIPS=200;                        // Minimum distance between short and medium EMA
 extern int USER_EMA_CROSS_DISTANCE=0;                                // Minimum distance in bars between EMA crosses
@@ -108,12 +108,11 @@ void OnTick()
       double openPrice = FindOpenPrice(ticketLong);
       double stopLoss = FindStopLoss(ticketLong);
       if (
-            Open[0] - openPrice > USER_TRAIL_STOP_LOSS &&
-            stopLoss < openPrice
+            Open[0] - stopLoss > USER_STOP_LOSS + USER_TRAIL_STOP_LOSS
          )
          
       {
-         TrailStopLoss(ticketLong, NormalizeDouble(openPrice + 30 * Point, Digits));
+         TrailStopLoss(ticketLong, NormalizeDouble(stopLoss + USER_TRAIL_STOP_LOSS + 30 * Point, Digits));
       }
    }
    
@@ -124,11 +123,10 @@ void OnTick()
       double openPrice = FindOpenPrice(ticketShort);
       double stopLoss = FindStopLoss(ticketShort);
       if (
-            openPrice - Open[0] > USER_TRAIL_STOP_LOSS &&
-            stopLoss > openPrice
+            stopLoss - Open[0] > USER_STOP_LOSS + USER_TRAIL_STOP_LOSS
          )
       {
-         TrailStopLoss(ticketShort, NormalizeDouble(openPrice - 30 * Point, Digits));
+         TrailStopLoss(ticketShort, NormalizeDouble(stopLoss - USER_TRAIL_STOP_LOSS - 30 * Point, Digits));
       }
    }
 }
