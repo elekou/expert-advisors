@@ -206,7 +206,7 @@ bool DowntrendOpeningConfirmed()
 bool UptrendConfirmed()
 {
    return (
-         macd_main > 0
+         macd_main > macd_signal
       );
 }
 
@@ -217,7 +217,7 @@ bool UptrendConfirmed()
 bool DowntrendConfirmed()
 {
    return (
-         macd_main < 0
+         macd_main < macd_signal
       );
 }
 
