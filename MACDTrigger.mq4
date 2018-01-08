@@ -178,7 +178,7 @@ bool NewBar()
 bool UptrendOpeningConfirmed()
 {  
    return (
-         macd_main > 0 &&
+         macd_main >= 0 &&
          macd_main_prev < 0 &&
          MathAbs(macd_signal) > USER_MACD_THRESHOLD
       );
@@ -192,7 +192,7 @@ bool UptrendOpeningConfirmed()
 bool DowntrendOpeningConfirmed()
 {
    return (
-         macd_main < 0 &&
+         macd_main <= 0 &&
          macd_main_prev > 0 &&
          MathAbs(macd_signal) > USER_MACD_THRESHOLD
       );
