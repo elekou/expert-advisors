@@ -3,6 +3,16 @@
 //|                                              lefterisk@gmail.com |
 //|                                              http://www.mql4.com |
 //+------------------------------------------------------------------+
+//| This is a MACD based strategy, designed to open trades 20-30     |
+//| times a month. It goes long when MACD main crosses zero from     |
+//| below and the signal is below main with a minimum distance from  |
+//| zero equal to a threshold of 25 pips. It goes short when MACD    |
+//| main crosses zero from above and MACD signal is above MACD main  |
+//| with a minimum distance from zero equal to a threshold of 25     |
+//| pips. It closes the trades when MACD main crosses MACD signal.   |
+//| It works on the hourly chart for EURGBP, EURUSD, GBPUSD.         |
+//|                                                                  |
+//+------------------------------------------------------------------+
 #include <stderror.mqh>
 #include <stdlib.mqh>
 #property copyright "lefterisk@gmail.com"
@@ -18,11 +28,10 @@ double USER_STOP_LOSS=0.0;
 double USER_TRAIL_STOP_LOSS=0.0;
 int USER_MAGIC_LONG=100;                                             // Identifies this EA's long positions
 int USER_MAGIC_SHORT=200;                                            // Identifies this EA's short positions
-double USER_MACD_THRESHOLD=0.0;
 extern int USER_TAKE_PROFIT_PIPS=1000;                               // Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=500;                                  // Stop Loss in pips
-extern int USER_TRAIL_STOP_LOSS_PIPS=300;                            // Trail Stop Loss distance in pips
-extern int USER_MACD_THRESHOLD_PIPS=25;                              // MACD signal threshold to allow trading
+extern int USER_TRAIL_STOP_LOSS_PIPS=500;                            // Trail Stop Loss distance in pips
+extern double USER_MACD_THRESHOLD=0.00025;						         // MACD signal threshold to allow trading
 extern double USER_POSITION=0.02;                                    // Base of position size calculations
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
 
@@ -42,7 +51,6 @@ int OnInit()
    USER_TAKE_PROFIT = USER_TAKE_PROFIT_PIPS * Point;
    USER_STOP_LOSS = USER_STOP_LOSS_PIPS * Point;
    USER_TRAIL_STOP_LOSS = USER_TRAIL_STOP_LOSS_PIPS * Point;
-   USER_MACD_THRESHOLD = USER_MACD_THRESHOLD_PIPS * Point;
    
    Alert("Init Symbol=", Symbol(), ", TP=", USER_TAKE_PROFIT,
       ", SL=", USER_STOP_LOSS, ", TrailSL=", USER_TRAIL_STOP_LOSS);
@@ -68,10 +76,10 @@ void OnTick()
       return;
       
    // Re-calculate indicators
-   macd_main = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_MAIN, 0), Digits);
-   macd_main_prev = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_MAIN, 1), Digits);
-   macd_signal = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_SIGNAL, 0), Digits);
-   macd_signal_prev = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_SIGNAL, 1), Digits);
+   macd_main = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_MAIN, 0), Digits+1);
+   macd_main_prev = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_MAIN, 1), Digits+1);
+   macd_signal = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_SIGNAL, 0), Digits+1);
+   macd_signal_prev = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_SIGNAL, 1), Digits+1);
 
    // Check conditions to close long
    if (!UptrendConfirmed() && LongIsOpen())
@@ -141,7 +149,8 @@ void Log()
 {
    if (USER_LOGGER_DEBUG)
    {
-      Print(Symbol(), ": macd_main: ", macd_main, ", macd_main_prev: ", macd_main_prev);
+      Print(Symbol(), ": macd_main: ", macd_main, ", macd_main_prev: ", macd_main_prev,
+		", macd_signal: ", macd_signal);
       Print(Symbol(), ": UptrendOpening: ", UptrendOpeningConfirmed(),
          ", DowntrendOpening: ", DowntrendOpeningConfirmed(),
          ", Uptrend: ", UptrendConfirmed(),
