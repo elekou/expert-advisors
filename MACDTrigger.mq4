@@ -3,14 +3,15 @@
 //|                                              lefterisk@gmail.com |
 //|                                              http://www.mql4.com |
 //+------------------------------------------------------------------+
-//| This is a MACD based strategy, designed to open trades 20-30     |
-//| times a month. It goes long when MACD main crosses zero from     |
-//| below and the signal is below main with a minimum distance from  |
-//| zero equal to a threshold of 25 pips. It goes short when MACD    |
-//| main crosses zero from above and MACD signal is above MACD main  |
-//| with a minimum distance from zero equal to a threshold of 25     |
-//| pips. It closes the trades when MACD main crosses MACD signal.   |
-//| It works on the hourly chart for EURGBP, EURUSD, GBPUSD.         |
+//| This is a MACD based strategy, designed to open trades 10-20     |
+//| times a month. It goes long when MACD signal crosses zero from   |
+//| below and main is below signal with a minimum distance from zero |
+//| equal to a threshold of 0.00025. It goes short when MACD signal  |
+//| crosses zero from above and MACD main is above MACD signal with  |
+//| a minimum distance from zero equal to a threshold of 0.00025.    |
+//| It closes the trades when MACD main crosses the zero line.       |
+//| It works on the hourly chart for EURUSD and GBPUSD.              |
+//| GBPUSD requires a threshold of 0.0005.                           |
 //|                                                                  |
 //+------------------------------------------------------------------+
 #include <stderror.mqh>
@@ -31,7 +32,7 @@ int USER_MAGIC_SHORT=200;                                            // Identifi
 extern int USER_TAKE_PROFIT_PIPS=1000;                               // Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=500;                                  // Stop Loss in pips
 extern int USER_TRAIL_STOP_LOSS_PIPS=500;                            // Trail Stop Loss distance in pips
-extern double USER_MACD_THRESHOLD=0.00025;						         // MACD signal threshold to allow trading
+extern double USER_MACD_THRESHOLD=0.00025;                           // MACD signal threshold to allow trading
 extern double USER_POSITION=0.02;                                    // Base of position size calculations
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
 
@@ -74,6 +75,7 @@ void OnTick()
    // This EA only considers trading when a new bar opens
    if (!NewBar())
       return;
+      
       
    // Re-calculate indicators
    macd_main = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_MAIN, 0), Digits+1);
@@ -149,7 +151,8 @@ void Log()
 {
    if (USER_LOGGER_DEBUG)
    {
-      Print(Symbol(), ": macd_main: ", macd_main, ", macd_main_prev: ", macd_main_prev,
+      Print(Symbol(), ": macd_main: ", macd_main,
+		", macd_main_prev: ", macd_main_prev,
 		", macd_signal: ", macd_signal);
       Print(Symbol(), ": UptrendOpening: ", UptrendOpeningConfirmed(),
          ", DowntrendOpening: ", DowntrendOpeningConfirmed(),
@@ -187,9 +190,9 @@ bool NewBar()
 bool UptrendOpeningConfirmed()
 {  
    return (
-         macd_main >= 0 &&
-         macd_main_prev < 0 &&
-         MathAbs(macd_signal) > USER_MACD_THRESHOLD
+         macd_signal >= 0 &&
+         macd_signal_prev < 0 &&
+         MathAbs(macd_main) > USER_MACD_THRESHOLD
       );
 }
 
@@ -201,9 +204,9 @@ bool UptrendOpeningConfirmed()
 bool DowntrendOpeningConfirmed()
 {
    return (
-         macd_main <= 0 &&
-         macd_main_prev > 0 &&
-         MathAbs(macd_signal) > USER_MACD_THRESHOLD
+         macd_signal <= 0 &&
+         macd_signal_prev > 0 &&
+         MathAbs(macd_main) > USER_MACD_THRESHOLD
       );
 }
 
@@ -215,7 +218,7 @@ bool DowntrendOpeningConfirmed()
 bool UptrendConfirmed()
 {
    return (
-         macd_main > macd_signal
+         macd_main > 0
       );
 }
 
@@ -226,7 +229,7 @@ bool UptrendConfirmed()
 bool DowntrendConfirmed()
 {
    return (
-         macd_main < macd_signal
+         macd_main < 0
       );
 }
 
@@ -383,14 +386,17 @@ int OpenLong(double positionSize)
       int Error=GetLastError();
       switch(Error)  // Overcomable errors
       {
-         case 135:Alert("OpenLong ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error), ". Retrying...");
+         case 135:Alert("OpenLong ", Symbol(), ": Error ", Error, " ",
+			ErrorDescription(Error), ". Retrying...");
             RefreshRates();
             continue;
-         case 136:Alert("OpenLong ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error), ". Waiting for a new tick...");
+         case 136:Alert("OpenLong ", Symbol(), ": Error ", Error, " ",
+			ErrorDescription(Error), ". Waiting for a new tick...");
             while(RefreshRates()==false)
                Sleep(1);
             continue;
-         case 146:Alert("OpenLong ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error), ". Retrying...");
+         case 146:Alert("OpenLong ", Symbol(), ": Error ", Error, " ",
+			ErrorDescription(Error), ". Retrying...");
             Sleep(500);
             RefreshRates();
             continue;
@@ -426,14 +432,17 @@ int OpenShort(double positionSize)
       int Error=GetLastError();
       switch(Error)  // Overcomable errors
       {
-         case 135:Alert("OpenShort ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error), ". Retrying...");
+         case 135:Alert("OpenShort ", Symbol(), ": Error ", Error, " ",
+			ErrorDescription(Error), ". Retrying...");
             RefreshRates();
             continue;
-         case 136:Alert("OpenShort ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error), ". Waiting for a new tick...");
+         case 136:Alert("OpenShort ", Symbol(), ": Error ", Error, " ",
+			ErrorDescription(Error), ". Waiting for a new tick...");
             while(RefreshRates()==false)
                Sleep(1);
             continue;
-         case 146:Alert("OpenShort ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error), ". Retrying...");
+         case 146:Alert("OpenShort ", Symbol(), ": Error ", Error, " ",
+			ErrorDescription(Error), ". Retrying...");
             Sleep(500);
             RefreshRates();
             continue;
@@ -459,14 +468,17 @@ void CloseLong(int ticket, double positionSize)
       int Error=GetLastError();
       switch(Error)  // Overcomable errors
       {
-         case 135:Alert("CloseLong #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Retrying..");
+         case 135:Alert("CloseLong #", ticket, ": Error ", Error, " ",
+			ErrorDescription(Error), ". Retrying..");
             RefreshRates();
             continue;
-         case 136:Alert("CloseLong #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Waiting for a new tick..");
+         case 136:Alert("CloseLong #", ticket, ": Error ", Error, " ",
+			ErrorDescription(Error), ". Waiting for a new tick..");
             while(RefreshRates()==false)
                Sleep(1);
             continue;
-         case 146:Alert("CloseLong #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Retrying..");
+         case 146:Alert("CloseLong #", ticket, ": Error ", Error, " ",
+			ErrorDescription(Error), ". Retrying..");
             Sleep(500);
             RefreshRates();
             continue;
@@ -490,14 +502,17 @@ void CloseShort(int ticket, double positionSize)
       int Error=GetLastError();
       switch(Error)  // Overcomable errors
       {
-         case 135:Alert("CloseShort #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Retrying..");
+         case 135:Alert("CloseShort #", ticket, ": Error ", Error, " ",
+			ErrorDescription(Error), ". Retrying..");
             RefreshRates();
             continue;
-         case 136:Alert("CloseShort #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Waiting for a new tick..");
+         case 136:Alert("CloseShort #", ticket, ": Error ", Error, " ",
+			ErrorDescription(Error), ". Waiting for a new tick..");
             while(RefreshRates()==false)
                Sleep(1);
             continue;
-         case 146:Alert("CloseShort #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Retrying..");
+         case 146:Alert("CloseShort #", ticket, ": Error ", Error, " ",
+			ErrorDescription(Error), ". Retrying..");
             Sleep(500);
             RefreshRates();
             continue;
@@ -527,14 +542,17 @@ void TrailStopLoss(int ticket, double SL)
       int Error=GetLastError();
       switch(Error)  // Overcomable errors
       {
-         case 135:Alert("TrailStopLoss #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Retrying..");
+         case 135:Alert("TrailStopLoss #", ticket, ": Error ", Error, " ",
+			ErrorDescription(Error), ". Retrying..");
             RefreshRates();
             continue;
-         case 136:Alert("TrailStopLoss #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Waiting for a new tick..");
+         case 136:Alert("TrailStopLoss #", ticket, ": Error ", Error, " ",
+			ErrorDescription(Error), ". Waiting for a new tick..");
             while(RefreshRates()==false)
                Sleep(1);
             continue;
-         case 146:Alert("TrailStopLoss #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Retrying..");
+         case 146:Alert("TrailStopLoss #", ticket, ": Error ", Error, " ",
+			ErrorDescription(Error), ". Retrying..");
             Sleep(500);
             RefreshRates();
             continue;
