@@ -373,20 +373,25 @@ int OpenLong(double positionSize)
       int Error=GetLastError();
       switch(Error)  // Overcomable errors
       {
-         case 135:Alert("OpenLong ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error), ". Retrying...");
+         case 135:Alert("OpenLong ", Symbol(), ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying...");
             RefreshRates();
             continue;
-         case 136:Alert("OpenLong ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error), ". Waiting for a new tick...");
+         case 136:Alert("OpenLong ", Symbol(), ": Error ", Error,
+            " ", ErrorDescription(Error), ". Waiting for a new tick...");
             while(RefreshRates()==false)
                Sleep(1);
             continue;
-         case 146:Alert("OpenLong ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error), ". Retrying...");
+         case 146:Alert("OpenLong ", Symbol(), ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying...");
             Sleep(500);
             RefreshRates();
             continue;
       }
-      Alert("OpenLong ", Symbol(), ": Ask=",Ask,", SL=",Bid-USER_STOP_LOSS,", TP=",Bid+USER_TAKE_PROFIT);
-      Alert("OpenLong ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error));
+      Alert("OpenLong ", Symbol(), ": Ask=", Ask,", SL=",
+         Bid-USER_STOP_LOSS, ", TP=", Bid+USER_TAKE_PROFIT);
+      Alert("OpenLong ", Symbol(), ": Error ", Error,
+         " ", ErrorDescription(Error));
       break;
    }
    return ticket;
@@ -416,20 +421,25 @@ int OpenShort(double positionSize)
       int Error=GetLastError();
       switch(Error)  // Overcomable errors
       {
-         case 135:Alert("OpenShort ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error), ". Retrying...");
+         case 135:Alert("OpenShort ", Symbol(), ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying...");
             RefreshRates();
             continue;
-         case 136:Alert("OpenShort ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error), ". Waiting for a new tick...");
+         case 136:Alert("OpenShort ", Symbol(), ": Error ", Error,
+            " ", ErrorDescription(Error), ". Waiting for a new tick...");
             while(RefreshRates()==false)
                Sleep(1);
             continue;
-         case 146:Alert("OpenShort ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error), ". Retrying...");
+         case 146:Alert("OpenShort ", Symbol(), ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying...");
             Sleep(500);
             RefreshRates();
             continue;
       }
-      Alert("OpenShort ", Symbol(), ": Bid=",Bid,", SL=",Ask+USER_STOP_LOSS,", TP=",Ask-USER_TAKE_PROFIT);
-      Alert("OpenShort ", Symbol(), ": Error ", Error, " ", ErrorDescription(Error));
+      Alert("OpenShort ", Symbol(), ": Bid=", Bid, ", SL=",
+         Ask+USER_STOP_LOSS, ", TP=", Ask-USER_TAKE_PROFIT);
+      Alert("OpenShort ", Symbol(), ": Error ", Error,
+         " ", ErrorDescription(Error));
       break;
    }
    return ticket;
@@ -449,19 +459,23 @@ void CloseLong(int ticket, double positionSize)
       int Error=GetLastError();
       switch(Error)  // Overcomable errors
       {
-         case 135:Alert("CloseLong #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Retrying..");
+         case 135:Alert("CloseLong #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying..");
             RefreshRates();
             continue;
-         case 136:Alert("CloseLong #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Waiting for a new tick..");
+         case 136:Alert("CloseLong #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Waiting for a new tick..");
             while(RefreshRates()==false)
                Sleep(1);
             continue;
-         case 146:Alert("CloseLong #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Retrying..");
+         case 146:Alert("CloseLong #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying..");
             Sleep(500);
             RefreshRates();
             continue;
       }
-      Alert("CloseLong #", ticket, ": Error ", Error, " ", ErrorDescription(Error));
+      Alert("CloseLong #", ticket, ": Error ", Error,
+         " ", ErrorDescription(Error));
       break;
    }
 }
@@ -480,19 +494,23 @@ void CloseShort(int ticket, double positionSize)
       int Error=GetLastError();
       switch(Error)  // Overcomable errors
       {
-         case 135:Alert("CloseShort #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Retrying..");
+         case 135:Alert("CloseShort #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying..");
             RefreshRates();
             continue;
-         case 136:Alert("CloseShort #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Waiting for a new tick..");
+         case 136:Alert("CloseShort #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Waiting for a new tick..");
             while(RefreshRates()==false)
                Sleep(1);
             continue;
-         case 146:Alert("CloseShort #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Retrying..");
+         case 146:Alert("CloseShort #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying..");
             Sleep(500);
             RefreshRates();
             continue;
       }
-      Alert("CloseShort #", ticket, ": Error ", Error, " ", ErrorDescription(Error));
+      Alert("CloseShort #", ticket, ": Error ", Error,
+         " ", ErrorDescription(Error));
       break;
    }
 }
@@ -517,19 +535,23 @@ void TrailStopLoss(int ticket, double SL)
       int Error=GetLastError();
       switch(Error)  // Overcomable errors
       {
-         case 135:Alert("TrailStopLoss #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Retrying..");
+         case 135:Alert("TrailStopLoss #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying..");
             RefreshRates();
             continue;
-         case 136:Alert("TrailStopLoss #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Waiting for a new tick..");
+         case 136:Alert("TrailStopLoss #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Waiting for a new tick..");
             while(RefreshRates()==false)
                Sleep(1);
             continue;
-         case 146:Alert("TrailStopLoss #", ticket, ": Error ", Error, " ", ErrorDescription(Error), ". Retrying..");
+         case 146:Alert("TrailStopLoss #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying..");
             Sleep(500);
             RefreshRates();
             continue;
       }
-      Alert("TrailStopLoss #", ticket, ": Error ", Error, " ", ErrorDescription(Error));
+      Alert("TrailStopLoss #", ticket, ": Error ", Error,
+         " ", ErrorDescription(Error));
       break;
    }
 }
