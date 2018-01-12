@@ -79,9 +79,9 @@ void OnTick()
       
    // Re-calculate indicators
    macd_main = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_MAIN, 0), Digits+1);
-   macd_main_prev = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_MAIN, 1), Digits+1);
+   macd_main_prev = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_MAIN, 2), Digits+1);
    macd_signal = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_SIGNAL, 0), Digits+1);
-   macd_signal_prev = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_SIGNAL, 1), Digits+1);
+   macd_signal_prev = NormalizeDouble(iMACD(NULL, 0, 12, 26, 9, PRICE_CLOSE, MODE_SIGNAL, 2), Digits+1);
 
    // Check conditions to close long
    if (!UptrendConfirmed() && LongIsOpen())
