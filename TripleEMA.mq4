@@ -3,6 +3,19 @@
 //|                                              lefterisk@gmail.com |
 //|                                              http://www.mql4.com |
 //+------------------------------------------------------------------+
+//| This is a strategy based on 3 different EMAs. The slow EMA is 84 |
+//| periods, the medium EMA is 42 periods and the fast EMA is 7      |
+//| periods. To go long, the fast EMA must be above the medium EMA by|
+//| at least 200 pips, the medium EMA must be above the slow EMA by  |
+//| most 100 pips and the most recent crossing between fast and      |
+//| medium EMA must have happened after the most recent crossing     |
+//| between medium and slow EMA. To go short, the same apply with    |
+//| the slower EMA on top of others and the faster EMA below all     |
+//| others. The trades close when a new bar opens below / above the  |
+//| slower EMA.                                                      |
+//| It works on the hourly chart for EURUSD, GBPUSD and EURGBP.      |
+//|                                                                  |
+//+------------------------------------------------------------------+
 #include <stderror.mqh>
 #include <stdlib.mqh>
 #property copyright "lefterisk@gmail.com"

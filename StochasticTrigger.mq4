@@ -3,6 +3,16 @@
 //|                                              lefterisk@gmail.com |
 //|                                              http://www.mql4.com |
 //+------------------------------------------------------------------+
+//| This is a Stochastic based strategy, it usually opens trades once|
+//| or twice every month. It goes long when a new bar opens above the|
+//| 24 period SMA and above the Parabolic SAR point and at the same  |
+//| time the Stochastic main crosses its signal in the region below  |
+//| 20.0. It goes short when a new bar opens below the 24 period SMA |
+//| and below the Parabolic SAR point and at the same time the       |
+//| Stochastic main crosses its signal in the region above 80.0.     |
+//| The trades close either at SL or at TP.                          |
+//| It works on the hourly chart for EURUSD, GBPUSD, EURGBP.         |
+//+------------------------------------------------------------------+
 #include <stderror.mqh>
 #include <stdlib.mqh>
 #property copyright "lefterisk@gmail.com"
