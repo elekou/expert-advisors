@@ -3,15 +3,17 @@
 //|                                              lefterisk@gmail.com |
 //|                                              http://www.mql4.com |
 //+------------------------------------------------------------------+
-//| This is a MACD based strategy, designed to open trades 10-20     |
-//| times a month. It goes long when MACD signal crosses zero from   |
-//| below and main is below signal with a minimum distance from zero |
-//| equal to a threshold of 0.00025. It goes short when MACD signal  |
-//| crosses zero from above and MACD main is above MACD signal with  |
-//| a minimum distance from zero equal to a threshold of 0.00025.    |
-//| It closes the trades when MACD main crosses the zero line.       |
-//| It works on the hourly chart for EURUSD and GBPUSD.              |
-//| GBPUSD requires a threshold of 0.0005.                           |
+//| This is a MACD based strategy, designed to open trades 5-6       |
+//| times a month. It goes long when MACD main crosses zero from     |
+//| below and signal is below main with a minimum distance from zero |
+//| equal to a threshold of 0.0005. It goes short when MACD main     |
+//| crosses zero from above and MACD signal is above MACD main with  |
+//| a minimum distance from zero equal to a threshold of 0.0005.     |
+//| It closes the trades either when MACD main crosses the zero line.|
+//| or when a main/signal cross happens in a distance from zero      |
+//| larger than a closing threshold of 0.001 and then MACD main      |
+//| crosses a line of 1,2 or 3 times the threshold.                  |
+//| It works on the hourly chart for EURUSD, EURGBP and GBPUSD.      |
 //|                                                                  |
 //+------------------------------------------------------------------+
 #include <stderror.mqh>
@@ -29,11 +31,12 @@ double USER_STOP_LOSS=0.0;
 double USER_TRAIL_STOP_LOSS=0.0;
 int USER_MAGIC_LONG=100;                                             // Identifies this EA's long positions
 int USER_MAGIC_SHORT=200;                                            // Identifies this EA's short positions
-extern int USER_TAKE_PROFIT_PIPS=1000;                               // Take Profit in pips
-extern int USER_STOP_LOSS_PIPS=500;                                  // Stop Loss in pips
+extern int USER_TAKE_PROFIT_PIPS=2000;                               // Take Profit in pips
+extern int USER_STOP_LOSS_PIPS=2000;                                 // Stop Loss in pips
 extern int USER_TRAIL_STOP_LOSS_PIPS=500;                            // Trail Stop Loss distance in pips
-extern double USER_MACD_THRESHOLD=0.00025;                           // MACD signal threshold to allow trading
-extern double USER_POSITION=0.02;                                    // Base of position size calculations
+extern double USER_MACD_CLOSING_THRESHOLD=0.001;                     // MACD threshold to close the triggered trade
+extern double USER_MACD_OPENING_THRESHOLD=0.0005;                    // MACD threshold to open the triggered trade
+extern double USER_POSITION=0.01;                                    // Base of position size calculations
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
 
 //+------------------------------------------------------------------+
@@ -43,6 +46,13 @@ double macd_main = 0.0;
 double macd_main_prev = 0.0;
 double macd_signal = 0.0;
 double macd_signal_prev = 0.0;
+
+//+------------------------------------------------------------------+
+//| EA state variables                                               +
+//+------------------------------------------------------------------+
+
+bool bulishReversalSignal = false;
+bool bearishReversalSignal = false;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -189,11 +199,15 @@ bool NewBar()
 //+------------------------------------------------------------------+
 bool UptrendOpeningConfirmed()
 {  
-   return (
-         macd_signal >= 0 &&
-         macd_signal_prev < 0 &&
-         MathAbs(macd_main) > USER_MACD_THRESHOLD
-      );
+   if (
+         macd_main >= 0 &&
+         macd_main_prev < 0 &&
+         MathAbs(macd_signal) > USER_MACD_OPENING_THRESHOLD
+      ) {
+         bearishReversalSignal = false;
+         return true;
+      } else
+         return false;
 }
 
 //+------------------------------------------------------------------+
@@ -203,11 +217,15 @@ bool UptrendOpeningConfirmed()
 //+------------------------------------------------------------------+
 bool DowntrendOpeningConfirmed()
 {
-   return (
-         macd_signal <= 0 &&
-         macd_signal_prev > 0 &&
-         MathAbs(macd_main) > USER_MACD_THRESHOLD
-      );
+   if (
+         macd_main <= 0 &&
+         macd_main_prev > 0 &&
+         MathAbs(macd_signal) > USER_MACD_OPENING_THRESHOLD
+      ) {
+         bulishReversalSignal = false;
+         return true;
+      } else
+         return false;
 }
 
 
@@ -217,9 +235,23 @@ bool DowntrendOpeningConfirmed()
 //+------------------------------------------------------------------+
 bool UptrendConfirmed()
 {
+   if (
+         macd_signal_prev < macd_main_prev &&
+         macd_signal > macd_main &&
+         MathAbs(macd_main) > USER_MACD_CLOSING_THRESHOLD
+      )
+         bearishReversalSignal = true;
    return (
-         macd_main > 0
-      );
+         macd_main > 0 &&
+         !(bearishReversalSignal && (
+            (MathAbs(macd_main_prev) > USER_MACD_CLOSING_THRESHOLD &&
+             MathAbs(macd_main) < USER_MACD_CLOSING_THRESHOLD) ||
+            (MathAbs(macd_main_prev) > 2 * USER_MACD_CLOSING_THRESHOLD &&
+             MathAbs(macd_main) < 2 * USER_MACD_CLOSING_THRESHOLD) ||
+            (MathAbs(macd_main_prev) > 3 * USER_MACD_CLOSING_THRESHOLD &&
+             MathAbs(macd_main) < 3 * USER_MACD_CLOSING_THRESHOLD)
+          ))
+   );
 }
 
 //+------------------------------------------------------------------+
@@ -228,9 +260,23 @@ bool UptrendConfirmed()
 //+------------------------------------------------------------------+
 bool DowntrendConfirmed()
 {
+   if (
+         macd_signal_prev > macd_main_prev &&
+         macd_signal < macd_main &&
+         MathAbs(macd_main) > USER_MACD_CLOSING_THRESHOLD
+      )
+         bulishReversalSignal = true;
    return (
-         macd_main < 0
-      );
+         macd_main < 0 &&
+         !(bulishReversalSignal && (
+            (MathAbs(macd_main_prev) > USER_MACD_CLOSING_THRESHOLD &&
+             MathAbs(macd_main) < USER_MACD_CLOSING_THRESHOLD) ||
+            (MathAbs(macd_main_prev) > 2 * USER_MACD_CLOSING_THRESHOLD &&
+             MathAbs(macd_main) < 2 * USER_MACD_CLOSING_THRESHOLD) ||
+            (MathAbs(macd_main_prev) > 3 * USER_MACD_CLOSING_THRESHOLD &&
+             MathAbs(macd_main) < 3 * USER_MACD_CLOSING_THRESHOLD)
+          ))
+   );
 }
 
 //+------------------------------------------------------------------+

@@ -4,7 +4,7 @@
 //|                                              http://www.mql4.com |
 //+------------------------------------------------------------------+
 //| This is a MACD based strategy to detect bearish and bulish       |
-//| reversals. It is designed to open trades 10-15 times a month.    |
+//| reversals. It is designed to open trades 5-6 times a month.      |
 //| It observes MACD maind and signal crossings happening away from  |
 //| the zero line. When a cross is detected above a threshold, 0.001,|
 //| then it waits for MACD main to fall below the threshold to open  |
@@ -13,7 +13,9 @@
 //| a long trade.                                                    |
 //| It closes the trades when MACD signal crosses the zero line.     |
 //| It works on the hourly chart for EURUSD, EURGBP and GBPUSD.      |
-//|                                                                  |
+//| GBPUSD requires a threshold of 0.002.                            |
+//| EURGBP is better off with a 500 point SL, since 200 pips in      |
+//| EURGBP burns through previous profits.                           |
 //+------------------------------------------------------------------+
 #include <stderror.mqh>
 #include <stdlib.mqh>
@@ -30,11 +32,11 @@ double USER_STOP_LOSS=0.0;
 double USER_TRAIL_STOP_LOSS=0.0;
 int USER_MAGIC_LONG=150;                                             // Identifies this EA's long positions
 int USER_MAGIC_SHORT=250;                                            // Identifies this EA's short positions
-extern int USER_TAKE_PROFIT_PIPS=2000;                               // Take Profit in pips
-extern int USER_STOP_LOSS_PIPS=500;                                  // Stop Loss in pips
-extern int USER_TRAIL_STOP_LOSS_PIPS=300;                            // Trail Stop Loss distance in pips
+extern int USER_TAKE_PROFIT_PIPS=2000;                               // Take Profit in points
+extern int USER_STOP_LOSS_PIPS=2000;                                 // Stop Loss in points
+extern int USER_TRAIL_STOP_LOSS_PIPS=200;                            // Trail Stop Loss distance in points
 extern double USER_MACD_THRESHOLD=0.001;                             // MACD threshold above/below which trading is allowed
-extern double USER_POSITION=0.02;                                    // Base of position size calculations
+extern double USER_POSITION=0.01;                                    // Base of position size calculations
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
 
 //+------------------------------------------------------------------+
