@@ -6,13 +6,15 @@
 //| This is a strategy based on 3 different EMAs. The slow EMA is 84 |
 //| periods, the medium EMA is 42 periods and the fast EMA is 7      |
 //| periods. To go long, the fast EMA must be above the medium EMA by|
-//| at least 200 pips, the medium EMA must be above the slow EMA by  |
+//| at least 100 pips, the medium EMA must be above the slow EMA by  |
 //| most 100 pips and the most recent crossing between fast and      |
 //| medium EMA must have happened after the most recent crossing     |
 //| between medium and slow EMA. To go short, the same apply with    |
 //| the slower EMA on top of others and the faster EMA below all     |
-//| others. The trades close when a new bar opens below / above the  |
-//| slower EMA.                                                      |
+//| others.                                                          |
+//| The long trades close when ADX- crosses above ADX+ and ADX main  |
+//| is above 25.1. The short trades close whne ADX+ crosses above    |
+//| ADX- and ADX main is above 25.1.
 //| It works on the hourly chart for EURUSD, GBPUSD and EURGBP.      |
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -31,13 +33,13 @@ double USER_STOP_LOSS=0.0;
 double USER_TRAIL_STOP_LOSS=0.0;
 int USER_MAGIC_LONG=850;                                             // Identifies this EA's long positions
 int USER_MAGIC_SHORT=950;                                            // Identifies this EA's short positions
-extern int USER_TAKE_PROFIT_PIPS=3000;                               // Take Profit in pips
-extern int USER_STOP_LOSS_PIPS=500;                                  // Stop Loss in pips
-extern int USER_TRAIL_STOP_LOSS_PIPS=150;                            // Trail Stop Loss distance in pips
+extern int USER_TAKE_PROFIT_PIPS=2000;                               // Take Profit in pips
+extern int USER_STOP_LOSS_PIPS=2000;                                 // Stop Loss in pips
+extern int USER_TRAIL_STOP_LOSS_PIPS=1000;                           // Trail Stop Loss distance in pips
 extern int USER_LONG_EMA_THRESHOLD_PIPS=100;                         // Maximum distance between long and medium EMA
-extern int USER_SHORT_EMA_THRESHOLD_PIPS=200;                        // Minimum distance between short and medium EMA
+extern int USER_SHORT_EMA_THRESHOLD_PIPS=100;                        // Minimum distance between short and medium EMA
 extern int USER_EMA_CROSS_DISTANCE=0;                                // Minimum distance in bars between EMA crosses
-extern double USER_POSITION=0.02;                                    // Base of position size calculations
+extern double USER_POSITION=0.01;                                    // Base of position size calculations
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
 
 //+------------------------------------------------------------------+
@@ -46,7 +48,9 @@ extern bool USER_LOGGER_DEBUG=false;                                 // Enable o
 double shortSMA = 0.0;
 double mediumSMA = 0.0;
 double longSMA = 0.0;
-double stoch = 0.0;
+double adx = 0.0;
+double adxpdi = 0.0;
+double adxmdi = 0.0;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -84,8 +88,10 @@ void OnTick()
    shortSMA = NormalizeDouble(iMA(NULL, 0, 7, 0, MODE_EMA, PRICE_CLOSE, 0), Digits);
    mediumSMA = NormalizeDouble(iMA(NULL, 0, 42, 0, MODE_EMA, PRICE_CLOSE, 0), Digits);
    longSMA = NormalizeDouble(iMA(NULL, 0, 84, 0, MODE_EMA, PRICE_CLOSE, 0), Digits);
-   stoch = iStochastic(NULL, 0, 5, 3, 3, MODE_SMA, STO_LOWHIGH, 0, 0);
-
+   adx = iADX(NULL, 0, 14, PRICE_CLOSE, MODE_MAIN, 0);
+   adxpdi = iADX(NULL, 0, 14, PRICE_CLOSE, MODE_PLUSDI, 0);
+   adxmdi = iADX(NULL, 0, 14, PRICE_CLOSE, MODE_MINUSDI, 0);
+   
    Log();
       
    // Check conditions to close long
@@ -247,7 +253,7 @@ bool DowntrendOpeningConfirmed()
 //+------------------------------------------------------------------+
 bool UptrendConfirmed()
 {
-   return (Open[0] > longSMA);
+   return (adx < 25.1 || adxpdi > adxmdi);
 }
 
 //+------------------------------------------------------------------+
@@ -256,7 +262,7 @@ bool UptrendConfirmed()
 //+------------------------------------------------------------------+
 bool DowntrendConfirmed()
 {
-   return (Open[0] < longSMA);
+   return (adx < 25.1 || adxmdi > adxpdi);
 }
 
 //+------------------------------------------------------------------+
