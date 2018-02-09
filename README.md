@@ -28,6 +28,7 @@ Back Testing settings:
 * Spread: 20 Points (2 pips)
 
 | EA | Currency Pair | SL | TSL | TP | EA specific settings | Profit | Absolute DD | Total Trades | Profit Trades (%) | Largest (Average) Profit | Largest (Average) Loss |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | | | | | | | | | | | | |
 
 *SL: Stop Loss, TSL: Trailing Stop Loss, TP: Take Profit, DD: Drawdown*
@@ -47,6 +48,7 @@ Back Testing settings:
 * Spread: 20 Points (2 pips)
 
 | EA | Currency Pair | SL | TSL | TP | EA specific settings | Profit | Absolute DD | Total Trades | Profit Trades (%) | Largest (Average) Profit | Largest (Average) Loss |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | | | | | | | | | | | | |
 
 *SL: Stop Loss, TSL: Trailing Stop Loss, TP: Take Profit, DD: Drawdown*
@@ -66,6 +68,7 @@ Back Testing settings:
 * Spread: 20 Points (2 pips)
 
 | EA | Currency Pair | SL | TSL | TP | EA specific settings | Profit | Absolute DD | Total Trades | Profit Trades (%) | Largest (Average) Profit | Largest (Average) Loss |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | | | | | | | | | | | | |
 
 *SL: Stop Loss, TSL: Trailing Stop Loss, TP: Take Profit, DD: Drawdown*
