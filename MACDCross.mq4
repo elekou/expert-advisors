@@ -7,14 +7,13 @@
 //| reversals. It is designed to open trades 5-6 times a month.      |
 //| It observes MACD maind and signal crossings happening away from  |
 //| the zero line. When a cross is detected above a threshold, 0.001,|
-//| then it waits for MACD main to fall below the threshold to open  |
-//| a short trade. When a cross is detected below a threshold, 0.001,|
-//| then it waits for MACD main to rise above the threshold to open  |
-//| a long trade.                                                    |
+//| then it waits for MACD main to fall below 1,2,3 or 4 times the   |
+//| threshold to open  a short trade.                                |
+//| When a cross is detected below a threshold, 0.001, then it waits |
+//| for MACD main to rise above the threshold to open a long trade.  |
 //| It closes the trades when MACD signal crosses the zero line.     |
 //| It works on the hourly chart for EURUSD, EURGBP and GBPUSD.      |
-//| GBPUSD requires a threshold of 0.002.                            |
-//| EURGBP is better off with a 500 point SL, since 200 pips in      |
+//| EURGBP is better off with a 400 point SL, since 200 pips in      |
 //| EURGBP burns through previous profits.                           |
 //+------------------------------------------------------------------+
 #include <stderror.mqh>
@@ -201,13 +200,22 @@ bool UptrendOpeningConfirmed()
 {  
    if (
          macd_main < -1 * USER_MACD_THRESHOLD &&
-         macd_main > macd_signal &&
-         macd_main_prev < macd_signal_prev
+         macd_main < macd_signal &&
+         macd_main_prev > macd_signal_prev
       )
          bulishReversalSignal = true;
    if (
       bulishReversalSignal == true &&
-      macd_main > -1 * USER_MACD_THRESHOLD
+      (
+            (MathAbs(macd_main_prev) > USER_MACD_THRESHOLD &&
+             MathAbs(macd_main) < USER_MACD_THRESHOLD) ||
+            (MathAbs(macd_main_prev) > 2 * USER_MACD_THRESHOLD &&
+             MathAbs(macd_main) < 2 * USER_MACD_THRESHOLD) ||
+            (MathAbs(macd_main_prev) > 3 * USER_MACD_THRESHOLD &&
+             MathAbs(macd_main) < 3 * USER_MACD_THRESHOLD) ||
+            (MathAbs(macd_main_prev) > 4 * USER_MACD_THRESHOLD &&
+             MathAbs(macd_main) < 4 * USER_MACD_THRESHOLD)
+      )
       ) {
          bulishReversalSignal = false;
          return true;
@@ -230,7 +238,16 @@ bool DowntrendOpeningConfirmed()
          bearishReversalSignal = true;
    if (
       bearishReversalSignal == true &&
-      macd_main < USER_MACD_THRESHOLD
+      (
+            (MathAbs(macd_main_prev) > USER_MACD_THRESHOLD &&
+             MathAbs(macd_main) < USER_MACD_THRESHOLD) ||
+            (MathAbs(macd_main_prev) > 2 * USER_MACD_THRESHOLD &&
+             MathAbs(macd_main) < 2 * USER_MACD_THRESHOLD) ||
+            (MathAbs(macd_main_prev) > 3 * USER_MACD_THRESHOLD &&
+             MathAbs(macd_main) < 3 * USER_MACD_THRESHOLD) ||
+            (MathAbs(macd_main_prev) > 4 * USER_MACD_THRESHOLD &&
+             MathAbs(macd_main) < 4 * USER_MACD_THRESHOLD)
+      )
       ) {
          bearishReversalSignal = false;
          return true;
