@@ -11,28 +11,67 @@ In summary, the EAs in this project are:
 
 The first EAs work on the hourly chart of three Forex pairs, EURUSD, EURGBP and GBPUSD, while the Reaper works on the minute chart of any Forex pair. The Reaper will not open any trade, it will just monitor the current profit and reap when a significant percentage of the balance is won.
 
-The following sections describe each EA in detail.
+The following sections describe each EA in detail. For each EA (except the Reaper) a table with back testing results is given. Back-testing is done by MT4 Strategy Tester, on a demo account of a 5-point broker (1 PIP = 10 Points) and EUR as the base currency. 
 
 ## MACDTrigger
 
 ### Description
 
+### Parameters
+
 ### Back testing
+
+Back Testing settings:
+* Start: 1/6/2017
+* End: 31/12/2017
+* Position size: 0.01
+* Spread: 20 Points (2 pips)
+
+| EA | Currency Pair | SL | TSL | TP | EA specific settings | Profit | Absolute DD | Total Trades | Profit Trades (%) | Largest (Average) Profit | Largest (Average) Loss |
+| | | | | | | | | | | | |
+
+*SL: Stop Loss, TSL: Trailing Stop Loss, TP: Take Profit, DD: Drawdown*
 
 ## MACDCross
 
 ### Description
 
+### Parameters
+
 ### Back testing
+
+Back Testing settings:
+* Start: 1/6/2017
+* End: 31/12/2017
+* Position size: 0.01
+* Spread: 20 Points (2 pips)
+
+| EA | Currency Pair | SL | TSL | TP | EA specific settings | Profit | Absolute DD | Total Trades | Profit Trades (%) | Largest (Average) Profit | Largest (Average) Loss |
+| | | | | | | | | | | | |
+
+*SL: Stop Loss, TSL: Trailing Stop Loss, TP: Take Profit, DD: Drawdown*
 
 ## TripleEMA
 
 ### Description
 
+### Parameters
+
 ### Back testing
+
+Back Testing settings:
+* Start: 1/6/2017
+* End: 31/12/2017
+* Position size: 0.01
+* Spread: 20 Points (2 pips)
+
+| EA | Currency Pair | SL | TSL | TP | EA specific settings | Profit | Absolute DD | Total Trades | Profit Trades (%) | Largest (Average) Profit | Largest (Average) Loss |
+| | | | | | | | | | | | |
+
+*SL: Stop Loss, TSL: Trailing Stop Loss, TP: Take Profit, DD: Drawdown*
 
 ## Reaper
 
 ### Description
 
-### Back testing
+### Parameters
