@@ -14,8 +14,9 @@
 //| USER_ defined global variables                                   |
 //+------------------------------------------------------------------+
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
-extern double USER_MINIMUM_REAP_PERCENTAGE=0.10;                     // Minimum reap profit
-extern double USER_MAXIMUM_REAP_PERCENTAGE=0.15;                     // Maximum reap profit
+extern double USER_MINIMUM_REAP_PERCENTAGE=0.115;                    // Minimum reap profit, EA is triggered at this percentage
+extern double USER_MINIMUM_REAP_PILLOW=0.015;                        // Distance from minimum reap profit, EA closes all trades
+extern double USER_MAXIMUM_REAP_PERCENTAGE=0.15;                     // Maximum reap profit, EA closes all trades when achieved
 bool minimumReapPercentageAchieved = false;
 
 //+------------------------------------------------------------------+
@@ -57,7 +58,7 @@ void OnTick()
          + " profit at " + DoubleToString(reapPercentage) + " reap percentage");
       CloseAll();
    }
-   if (minimumReapPercentageAchieved && reapPercentage < (USER_MINIMUM_REAP_PERCENTAGE - 0.01)) {
+   if (minimumReapPercentageAchieved && reapPercentage < (USER_MINIMUM_REAP_PERCENTAGE - USER_MINIMUM_REAP_PILLOW)) {
       minimumReapPercentageAchieved = false;
       Alert("Reaping ", profit, " profit at ", reapPercentage, " reap percentage");
       SendNotification("Reaping " + DoubleToString(profit)

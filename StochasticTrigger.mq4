@@ -28,11 +28,11 @@ double USER_STOP_LOSS=0.0;
 double USER_TRAIL_STOP_LOSS=0.0;
 int USER_MAGIC_LONG=300;                                             // Identifies this EA's long positions
 int USER_MAGIC_SHORT=400;                                            // Identifies this EA's short positions
-extern int USER_TAKE_PROFIT_PIPS=2000;                               // Take Profit in pips
-extern int USER_STOP_LOSS_PIPS=500;                                  // Stop Loss in pips
-extern int USER_TRAIL_STOP_LOSS_PIPS=100;                            // Trail Stop Loss distance in pips
+extern int USER_TAKE_PROFIT_PIPS=3000;                               // Take Profit in pips
+extern int USER_STOP_LOSS_PIPS=1000;                                 // Stop Loss in pips
+extern int USER_TRAIL_STOP_LOSS_PIPS=200;                            // Trail Stop Loss distance in pips
 extern int USER_SMA_PERIODS=24;                                      // SMA periods
-extern double USER_POSITION=0.02;                                    // Base of position size calculations
+extern double USER_POSITION=0.01;                                    // Base of position size calculations
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
 
 //+------------------------------------------------------------------+
