@@ -14,6 +14,12 @@ The first four EAs work on the hourly chart of three Forex pairs, EURUSD, EURGBP
 
 The following sections describe each EA in detail. For each EA (except the Reaper) a table with back testing results is given. Back-testing is done by MT4 Strategy Tester, on a demo account of a 5-point broker (1 PIP = 10 Points) and EUR as the base currency. 
 
+## Risk Warning
+
+The EAs in this project are provided without any guarantee that they will produce a profit, or at least break even. In fact, they can incur significant loss of capital, should you decide to apply them in a live trading account. They are designed to work on a platform that performs trades on the foreign exchange market on margin. This carries an extremely high level of risk and may not be suitable to all investors. Trading on FX with these EAs is definitely not suitable to anyone with limited resources or limited investment/trading experience or low risk tolerance.
+
+Keep in mind that these EAs are work in progress and provided here for educational purposes only. They have never been tested with a live trading account; they have only been tested on a demo account and their results are debatable (quality of historical data, software bugs, limited back-testing period, etc.). In other words, if you're using these EAs to risk any amount of money, you're crazy.
+
 ## Back testing setup
 
 Back testing is done using MT4 strategy tester, and the history data for EURGBP, EURUSD and GBPUSD available at http://www.histdata.com/. History data for 2017 were used. To import those data into MT4 History Center, please refer to http://www.histdata.com/f-a-q/metatrader-how-to-import-from-csv/
