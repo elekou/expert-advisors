@@ -59,7 +59,7 @@ Back Testing settings:
 | MACDTrigger | GBPUSD | 2000 | 200 | 2000 | 0.001 / 0.0005 | -21.00 | 38.32 | 72 | 25 (34.72%) | 16.05 (5.19) | -11.00 (-3.21) |
 | MACDTrigger | EURUSD | 2000 | 200 | 2000 | 0.001 / 0.0005 | 2.87 | 32.72 | 47 | 19 (40.43%) | 14.73 (4.25) | -18.48 (-2.78) |
 | MACDTrigger | EURGBP | 2000 | 200 | 2000 | 0.001 / 0.0005 | -16.73 | 37.74 | 31 | 9 (29.03%) | 8.26 (4.56) | -4.19 (-2.63) |
-| | | | | | | | | | | | |
+
 
 *SL: Stop Loss, TSL: Trailing Stop Loss, TP: Take Profit, DD: Drawdown*
 
@@ -67,7 +67,22 @@ Back Testing settings:
 
 ### Description
 
+This is a MACD based strategy to detect short term bearish and bullish reversals. It is designed to open trades 5-6 times a month.
+
+It observes MACD main and signal crossings happening away from the zero line. When a cross is detected above a threshold, by default set to 0.001, then it waits for MACD main to cross a line 1,2,3 or 4 times the threshold to open a short trade. When a cross is detected below a threshold, set to -0.001, then it waits for MACD main to rise above a line 1,2,3 or 4 times the threshold to open a long trade.
+
+To clarify opening conditions, consider this example. While price is moving up, both MACD main and signal rise above 0.001. At some point, price drops slightly, so MACD signal rises above main, and then as price continues to move up, main crosses again above signal. This is a cross happening above the threshold of 0.001. After this point, whenever MACD main will cross any of the lines 1,2,3 or 4 times the threshold from above, which means the price is dropping, then a short trade will open.
+
+Trades close when MACD signal crosses the zero line.
+
 ### Parameters
+
+* USER_TAKE_PROFIT_PIPS: Take profit value. Set to 2000 points, equivalent to 200 pips.
+* USER_STOP_LOSS_PIPS: Stop loss value. Set to 2000 points, equivalent to 200 pips.
+* USER_TRAIL_STOP_LOSS_PIPS: Set to 200 points equivalent to 20 pips. Every time the price moves 20 pips in your favor, stop loss moves 20 pips at the direction of the price.
+* USER_MACD_THRESHOLD: This is the threshold above which a cross of MACD main/signal must happen, to trigger a trade opening when MACD main crosses a line 1, 2 or 3 times the threshold.
+* USER_POSITION: Set to 0.01 by default. That is a micro lot. Adjust to your liking.
+* USER_LOGGER_DEBUG: Set to false by default. When set to true, it prints debug state info whenever a trade opens or closes.
 
 ### Back testing
 
@@ -79,7 +94,9 @@ Back Testing settings:
 
 | EA | Currency Pair | SL | TSL | TP | EA specific settings | Profit | Absolute DD | Total Trades | Profit Trades (%) | Largest (Average) Profit | Largest (Average) Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | | | | | | |
+| MACDCross | GBPUSD | 2000 | 200 | 2000 | 0.001 | 57.76 | 12.68 | 50 | 34 (68%)| 15.98 (3.24) | -10.77 (-3.27) |
+| MACDCross | EURUSD | 2000 | 200 | 2000 | 0.001 | 50.97 | 3.83 | 35 | 25 (71.43%)| 9.53 (2.82) | -9.61 (-1.96) |
+| MACDCross | EURGBP |  400 | 200 | 2000 | 0.001 | 43.47 | 0.25 | 37 | 27 (72.97%) | 11.99 (3.30) | -5.20 (-4.56) |
 
 *SL: Stop Loss, TSL: Trailing Stop Loss, TP: Take Profit, DD: Drawdown*
 
