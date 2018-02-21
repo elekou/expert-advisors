@@ -28,7 +28,23 @@ Back testing is done using MT4 strategy tester, and the history data for EURGBP,
 
 ### Description
 
+This is a MACD based strategy, designed to open trades 5-10 times a month.
+
+It opens a buy trade when MACD main line crosses zero from below and at the same time MACD signal line is below main with a minimum distance from zero equal to a threshold of 0.0005. It opens a sell trade when MACD main line crosses zero from above and MACD signal line is above main with a minimum distance from zero equal to a threshold of 0.0005.
+
+It closes the trade either when MACD main crosses the zero line, or when a main/signal cross happens in a distance from zero larger than 0.001 and then MACD main crosses a line 1, 2, or 3 times the threshold of 0.001.
+
+To clarify the closing condition, suppose that a long trade has opened when MACD main is zero and MACD signal is -0.0006. While the price moves up, both MACD main and MACD signal increase. At some point the price starts to reverse, and MACD signal moves above MACD main at 0.0025. This is a cross happening above the threshold of 0.001. While MACD main continues to drop, when it crosses the 0.002 line, the trade closes, hopefully at a profit.
+
 ### Parameters
+
+* USER_TAKE_PROFIT_PIPS: Take profit value. Set to 2000 points, equivalent to 200 pips.
+* USER_STOP_LOSS_PIPS: Stop loss value. Set to 2000 points, equivalent to 200 pips.
+* USER_TRAIL_STOP_LOSS_PIPS: Set to 200 points equivalent to 20 pips. Every time the price moves 20 pips in your favor, stop loss moves 20 pips at the direction of the price.
+* USER_MACD_OPENING_THRESHOLD: This is the minimum distance of MACD signal from zero, that allows opening a trade. Set to 0.0005 by default.
+* USER_MACD_CLOSING_THRESHOLD: This is the threshold above which a cross of MACD main/signal must happen, to trigger a trade closing when MACD main crosses a line 1, 2 or 3 times the threshold.
+* USER_POSITION: Set to 0.01 by default. That is a micro lot. Adjust to your liking.
+* USER_LOGGER_DEBUG: Set to false by default. When set to true, it prints debug state info whenever a trade opens or closes.
 
 ### Back testing
 
@@ -40,6 +56,9 @@ Back Testing settings:
 
 | EA | Currency Pair | SL | TSL | TP | EA specific settings | Profit | Absolute DD | Total Trades | Profit Trades (%) | Largest (Average) Profit | Largest (Average) Loss |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| MACDTrigger | GBPUSD | 2000 | 200 | 2000 | 0.001 / 0.0005 | -21.00 | 38.32 | 72 | 25 (34.72%) | 16.05 (5.19) | -11.00 (-3.21) |
+| MACDTrigger | EURUSD | 2000 | 200 | 2000 | 0.001 / 0.0005 | 2.87 | 32.72 | 47 | 19 (40.43%) | 14.73 (4.25) | -18.48 (-2.78) |
+| MACDTrigger | EURGBP | 2000 | 200 | 2000 | 0.001 / 0.0005 | -16.73 | 37.74 | 31 | 9 (29.03%) | 8.26 (4.56) | -4.19 (-2.63) |
 | | | | | | | | | | | | |
 
 *SL: Stop Loss, TSL: Trailing Stop Loss, TP: Take Profit, DD: Drawdown*
