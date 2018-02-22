@@ -3,20 +3,24 @@
 //|                                              lefterisk@gmail.com |
 //|                                              http://www.mql4.com |
 //+------------------------------------------------------------------+
-//| This is a strategy based on 3 different EMAs. The slow EMA is 84 |
-//| periods, the medium EMA is 42 periods and the fast EMA is 7      |
-//| periods. To go long, the fast EMA must be above the medium EMA by|
-//| at least 100 pips, the medium EMA must be above the slow EMA by  |
-//| most 100 pips and the most recent crossing between fast and      |
-//| medium EMA must have happened after the most recent crossing     |
-//| between medium and slow EMA. To go short, the same apply with    |
-//| the slower EMA on top of others and the faster EMA below all     |
-//| others.                                                          |
+//| This is a strategy based on 3 different EMAs combined with ADX.  |
+//| The long EMA is 84 periods, the medium EMA is 42 periods and the |
+//| short EMA is 7 periods.                                          |
+//| To go long, the short EMA must be above the medium EMA by a      |
+//| maximum threshold defined as the short_ema_threshold, the medium |
+//| EMA must be above the slow EMA by a maximum threshold defined as | 
+//| long_ema_threshold and ADX main must be above a threshold of 25.1|
+//| and ADX+ must be above ADX- for the last two periods.            |
+//| To go short, the opposite conditions apply, the shortEMA must be |
+//| below medium EMA, medium EMA below long EMA and ADX- above ADX+  |
+//| for the last two periods.                                        |
 //| The long trades close when ADX- crosses above ADX+ and ADX main  |
-//| is above 25.1. The short trades close whne ADX+ crosses above    |
-//| ADX- and ADX main is above 25.1.
-//| It works on the hourly chart for EURUSD, GBPUSD and EURGBP.      |
-//|                                                                  |
+//| is above 25.1. The short trades close when ADX+ crosses above    |
+//| ADX- and ADX main is above 25.1.                                 |
+//| It works on the hourly chart for EURUSD and GBPUSD.              |
+//| Optimization defines the two thresholds. For EURUSD the short    |
+//| threshold is 300 and the long 100. For GBPUSD, short threshold is|
+//| 100 and the long threshold is 300                                |
 //+------------------------------------------------------------------+
 #include <stderror.mqh>
 #include <stdlib.mqh>
@@ -34,12 +38,11 @@ double USER_TRAIL_STOP_LOSS=0.0;
 int USER_MAGIC_LONG=850;                                             // Identifies this EA's long positions
 int USER_MAGIC_SHORT=950;                                            // Identifies this EA's short positions
 extern int USER_TAKE_PROFIT_PIPS=2000;                               // Take Profit in pips
-extern int USER_STOP_LOSS_PIPS=2000;                                 // Stop Loss in pips
-extern int USER_TRAIL_STOP_LOSS_PIPS=1000;                           // Trail Stop Loss distance in pips
+extern int USER_STOP_LOSS_PIPS=1000;                                 // Stop Loss in pips
+extern int USER_TRAIL_STOP_LOSS_PIPS=200;                            // Trail Stop Loss distance in pips
 extern int USER_LONG_EMA_THRESHOLD_PIPS=100;                         // Maximum distance between long and medium EMA
-extern int USER_SHORT_EMA_THRESHOLD_PIPS=100;                        // Minimum distance between short and medium EMA
-extern int USER_EMA_CROSS_DISTANCE=0;                                // Minimum distance in bars between EMA crosses
-extern double USER_POSITION=0.01;                                    // Base of position size calculations
+extern int USER_SHORT_EMA_THRESHOLD_PIPS=300;                        // Maximum distance between short and medium EMA
+extern double USER_POSITION=0.01;                                    // Position size
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
 
 //+------------------------------------------------------------------+
@@ -49,8 +52,8 @@ double shortSMA = 0.0;
 double mediumSMA = 0.0;
 double longSMA = 0.0;
 double adx = 0.0;
-double adxpdi = 0.0;
-double adxmdi = 0.0;
+double adxpdi = 0.0, adxpdi_prev = 0.0;
+double adxmdi = 0.0, adxmdi_prev = 0.0;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -90,7 +93,9 @@ void OnTick()
    longSMA = NormalizeDouble(iMA(NULL, 0, 84, 0, MODE_EMA, PRICE_CLOSE, 0), Digits);
    adx = iADX(NULL, 0, 14, PRICE_CLOSE, MODE_MAIN, 0);
    adxpdi = iADX(NULL, 0, 14, PRICE_CLOSE, MODE_PLUSDI, 0);
+   adxpdi_prev = iADX(NULL, 0, 14, PRICE_CLOSE, MODE_PLUSDI, 2);
    adxmdi = iADX(NULL, 0, 14, PRICE_CLOSE, MODE_MINUSDI, 0);
+   adxmdi_prev = iADX(NULL, 0, 14, PRICE_CLOSE, MODE_MINUSDI, 2);
    
    Log();
       
@@ -160,6 +165,8 @@ void Log()
    {
       Print(Symbol(), ": shortSMA=", shortSMA, ", mediumSMA=", mediumSMA,
             ", longSMA=", longSMA);
+      Print(Symbol(), ": ADX=", adx, ", ADX+=", adxpdi,
+            ", ADX-=", adxmdi);
       Print(Symbol(), ": UptrendOpening: ", UptrendOpeningConfirmed(),
          ", DowntrendOpening: ", DowntrendOpeningConfirmed(),
          ", Uptrend: ", UptrendConfirmed(),
@@ -195,25 +202,14 @@ bool NewBar()
 //+------------------------------------------------------------------+
 bool UptrendOpeningConfirmed()
 {  
-   int shortXSteps=0, longXSteps=0;
-   while (
-      iMA(NULL, 0, 7, 0, MODE_EMA, PRICE_CLOSE, shortXSteps) > 
-         iMA(NULL, 0, 42, 0, MODE_EMA, PRICE_CLOSE, shortXSteps))
-   {
-      shortXSteps++;
-   }
-   while (
-      iMA(NULL, 0, 42, 0, MODE_EMA, PRICE_CLOSE, longXSteps) > 
-         iMA(NULL, 0, 84, 0, MODE_EMA, PRICE_CLOSE, longXSteps))
-   {
-      longXSteps++;
-   }
    return (
-         shortXSteps - longXSteps < USER_EMA_CROSS_DISTANCE &&
          mediumSMA > longSMA &&
          mediumSMA - longSMA < USER_LONG_EMA_THRESHOLD_PIPS * Point &&
          shortSMA > mediumSMA &&
-         shortSMA - mediumSMA > USER_SHORT_EMA_THRESHOLD_PIPS * Point
+         shortSMA - mediumSMA < USER_SHORT_EMA_THRESHOLD_PIPS * Point &&
+         adx > 25.1 &&
+         adxpdi > adxmdi &&
+         adxpdi_prev > adxmdi_prev
       );
 }
 
@@ -224,25 +220,14 @@ bool UptrendOpeningConfirmed()
 //+------------------------------------------------------------------+
 bool DowntrendOpeningConfirmed()
 {
-   int shortXSteps=0, longXSteps=0;
-   while (
-      iMA(NULL, 0, 7, 0, MODE_EMA, PRICE_CLOSE, shortXSteps) < 
-         iMA(NULL, 0, 42, 0, MODE_EMA, PRICE_CLOSE, shortXSteps))
-   {
-      shortXSteps++;
-   }
-   while (
-      iMA(NULL, 0, 42, 0, MODE_EMA, PRICE_CLOSE, longXSteps) < 
-         iMA(NULL, 0, 84, 0, MODE_EMA, PRICE_CLOSE, longXSteps))
-   {
-      longXSteps++;
-   }
    return (
-         shortXSteps - longXSteps < USER_EMA_CROSS_DISTANCE &&
          mediumSMA < longSMA &&
-         longSMA - mediumSMA  < USER_LONG_EMA_THRESHOLD_PIPS * Point &&
+         longSMA - mediumSMA < USER_LONG_EMA_THRESHOLD_PIPS * Point &&
          shortSMA < mediumSMA &&
-         mediumSMA - shortSMA > USER_SHORT_EMA_THRESHOLD_PIPS * Point
+         mediumSMA - shortSMA < USER_SHORT_EMA_THRESHOLD_PIPS * Point &&
+         adx > 25.1 &&
+         adxpdi < adxmdi  &&
+         adxpdi_prev < adxmdi_prev
       );
 }
 
@@ -253,7 +238,7 @@ bool DowntrendOpeningConfirmed()
 //+------------------------------------------------------------------+
 bool UptrendConfirmed()
 {
-   return (adx < 25.1 || adxpdi > adxmdi);
+   return (adx < 25.1 || adxpdi > adxmdi || adxpdi_prev > adxmdi_prev);
 }
 
 //+------------------------------------------------------------------+
@@ -262,7 +247,7 @@ bool UptrendConfirmed()
 //+------------------------------------------------------------------+
 bool DowntrendConfirmed()
 {
-   return (adx < 25.1 || adxmdi > adxpdi);
+   return (adx < 25.1 || adxmdi > adxpdi || adxmdi_prev > adxpdi_prev);
 }
 
 //+------------------------------------------------------------------+
