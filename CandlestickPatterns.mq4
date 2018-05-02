@@ -330,12 +330,12 @@ bool IsHighest(int shift)
    double lengthOC = LengthOC(shift);
    
    if (IsGreen(shift)) {
-      for (int i=shift; i<shift+USER_BACK_PERIODS; i++)
+      for (int i=shift+1; i<shift+USER_BACK_PERIODS; i++)
          if (High[i] > Close[shift] + lengthOC)
             return false;
       return true;
    } else {
-      for (int i=shift; i<shift+USER_BACK_PERIODS; i++)
+      for (int i=shift+1; i<shift+USER_BACK_PERIODS; i++)
          if (High[i] > Open[shift] + lengthOC)
             return false;
       return true;   
@@ -347,12 +347,12 @@ bool IsLowest(int shift)
    double lengthOC = LengthOC(shift);
    
    if (IsGreen(shift)) {
-      for (int i=shift; i<shift+USER_BACK_PERIODS; i++)
+      for (int i=shift+1; i<shift+USER_BACK_PERIODS; i++)
          if (Low[i] < Open[shift] - lengthOC)
             return false;
       return true;
    } else {
-      for (int i=shift; i<shift+USER_BACK_PERIODS; i++)
+      for (int i=shift+1; i<shift+USER_BACK_PERIODS; i++)
          if (Low[i] < Close[shift] - lengthOC)
             return false;
       return true;   
