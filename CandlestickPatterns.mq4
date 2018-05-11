@@ -106,7 +106,7 @@ void OnTick()
          CalculatePositionSize(USER_MAGIC_BULLISH_ENGULFING),
          USER_MAGIC_BULLISH_ENGULFING,
          CalculateSL(USER_MAGIC_BULLISH_ENGULFING),
-         USER_TAKE_PROFIT);
+         CalculateTP(USER_MAGIC_BULLISH_ENGULFING));
    }
 
    if (
@@ -128,7 +128,7 @@ void OnTick()
          CalculatePositionSize(USER_MAGIC_BEARISH_ENGULFING),
          USER_MAGIC_BEARISH_ENGULFING,
          CalculateSL(USER_MAGIC_BEARISH_ENGULFING),
-         USER_TAKE_PROFIT);
+         CalculateTP(USER_MAGIC_BEARISH_ENGULFING));
    }
  
    if (
@@ -150,7 +150,7 @@ void OnTick()
          CalculatePositionSize(USER_MAGIC_THREE_WHITE_SOLDIERS),
          USER_MAGIC_THREE_WHITE_SOLDIERS,
          CalculateSL(USER_MAGIC_THREE_WHITE_SOLDIERS),
-         USER_TAKE_PROFIT);
+         CalculateTP(USER_MAGIC_THREE_WHITE_SOLDIERS));
    }
 
    if (
@@ -172,7 +172,7 @@ void OnTick()
          CalculatePositionSize(USER_MAGIC_THREE_BLACK_CROWS),
          USER_MAGIC_THREE_BLACK_CROWS,
          CalculateSL(USER_MAGIC_THREE_BLACK_CROWS),
-         USER_TAKE_PROFIT);
+         CalculateTP(USER_MAGIC_THREE_BLACK_CROWS));
    }
  
    if (
@@ -194,7 +194,7 @@ void OnTick()
          CalculatePositionSize(USER_MAGIC_MORNING_STAR),
          USER_MAGIC_MORNING_STAR,
          CalculateSL(USER_MAGIC_MORNING_STAR),
-         USER_TAKE_PROFIT);
+         CalculateTP(USER_MAGIC_MORNING_STAR));
    }
 
    if (
@@ -216,7 +216,7 @@ void OnTick()
          CalculatePositionSize(USER_MAGIC_EVENING_STAR),
          USER_MAGIC_EVENING_STAR,
          CalculateSL(USER_MAGIC_EVENING_STAR),
-         USER_TAKE_PROFIT);
+         CalculateTP(USER_MAGIC_EVENING_STAR));
    }
  
    if (
@@ -238,7 +238,7 @@ void OnTick()
          CalculatePositionSize(USER_MAGIC_THREE_INSIDE_UP),
          USER_MAGIC_THREE_INSIDE_UP,
          CalculateSL(USER_MAGIC_THREE_INSIDE_UP),
-         USER_TAKE_PROFIT);
+         CalculateTP(USER_MAGIC_THREE_INSIDE_UP));
    }
 
    if (
@@ -260,7 +260,7 @@ void OnTick()
          CalculatePositionSize(USER_MAGIC_THREE_INSIDE_DOWN),
          USER_MAGIC_THREE_INSIDE_DOWN,
          CalculateSL(USER_MAGIC_THREE_INSIDE_DOWN),
-         USER_TAKE_PROFIT);
+         CalculateTP(USER_MAGIC_THREE_INSIDE_DOWN));
    }
  
    if (
@@ -270,6 +270,18 @@ void OnTick()
       int ticket = FindShort(USER_MAGIC_THREE_INSIDE_DOWN);
       CloseShort(ticket, CalculatePositionSize(USER_MAGIC_THREE_INSIDE_DOWN));
    }  
+   
+   //+---------------------------------------------------------------+
+   //| Trail S/L for all open positions                              |
+   //+---------------------------------------------------------------+
+   TrailSL(USER_MAGIC_BEARISH_ENGULFING);
+   TrailSL(USER_MAGIC_BULLISH_ENGULFING);
+   TrailSL(USER_MAGIC_EVENING_STAR);
+   TrailSL(USER_MAGIC_MORNING_STAR);
+   TrailSL(USER_MAGIC_THREE_BLACK_CROWS);
+   TrailSL(USER_MAGIC_THREE_WHITE_SOLDIERS);
+   TrailSL(USER_MAGIC_THREE_INSIDE_DOWN);
+   TrailSL(USER_MAGIC_THREE_INSIDE_UP);
    
 }
 
@@ -515,20 +527,20 @@ bool OpenThreeInsideDown()
 //+------------------------------------------------------------------+
 bool AllBullishPatterns()
 {
-   return
-      OpenBullishEngulfing() ||
-      OpenThreeWhiteSoldiers() ||
-      OpenMorningStar() ||
-      OpenThreeInsideUp();
+   return false;
+      //OpenBullishEngulfing() ||
+      //OpenThreeWhiteSoldiers() ||
+      //OpenMorningStar() ||
+      //OpenThreeInsideUp();
 }
 
 bool AllBearishPatterns()
 {
-   return
-      OpenBearishEngulfing() ||
-      OpenThreeBlackCrows() ||
-      OpenEveningStar() ||
-      OpenThreeInsideDown();
+   return false;
+      //OpenBearishEngulfing() ||
+      //OpenThreeBlackCrows() ||
+      //OpenEveningStar() ||
+      //OpenThreeInsideDown();
 }
 
 
@@ -571,7 +583,25 @@ double CalculateSL(int magic)
 //+------------------------------------------------------------------+
 double CalculateTP(int magic)
 {
-   return USER_TAKE_PROFIT;
+   if (magic == USER_MAGIC_BULLISH_ENGULFING) {
+      return (LengthOC(1) + 2 * LengthOC(2));
+   } else if (magic == USER_MAGIC_BEARISH_ENGULFING) {
+      return (LengthOC(1) + 2 * LengthOC(2));
+   } else if (magic == USER_MAGIC_THREE_WHITE_SOLDIERS) {
+      return (Close[1] - Open[3]);
+   } else if (magic == USER_MAGIC_THREE_BLACK_CROWS) {
+      return (Open[3] - Close[1]);
+   } else if (magic == USER_MAGIC_MORNING_STAR) {
+      return USER_TAKE_PROFIT;
+   } else if (magic == USER_MAGIC_EVENING_STAR) {
+      return USER_TAKE_PROFIT;
+   } else if (magic == USER_MAGIC_THREE_INSIDE_UP) {
+      return LengthOC(2) + LengthOC(3);
+   } else if (magic == USER_MAGIC_THREE_INSIDE_DOWN) {
+      return LengthOC(2) + LengthOC(3);
+   } else {
+      return USER_TAKE_PROFIT;
+   }
 }
 
 //+------------------------------------------------------------------+
@@ -696,6 +726,21 @@ double FindStopLoss(int ticket)
 }
 
 //+------------------------------------------------------------------+
+//| User function FindTakeProfit()                                   |
+//| Return the TakeProfit of an open order, or -1.0 if order is      |
+//| not found                                                        |
+//+------------------------------------------------------------------+
+double FindTakeProfit(int ticket)
+{
+      bool select = OrderSelect(ticket, SELECT_BY_TICKET);
+      if (!select)
+      {
+         return -1.0;
+      }
+      return OrderTakeProfit();
+}
+
+//+------------------------------------------------------------------+
 //| User function TrailSL                                            |
 //+------------------------------------------------------------------+
 void TrailSL(int magic)
@@ -705,12 +750,12 @@ void TrailSL(int magic)
    {
       int ticketLong = FindLong(magic);
       double openPrice = FindOpenPrice(ticketLong);
-      double stopLoss = FindStopLoss(ticketLong);
+      double takeProfit = FindTakeProfit(ticketLong);
       if (
-            Open[0] - stopLoss > 2 * USER_TRAIL_STOP_LOSS
+            MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3
          )
       {
-         TrailStopLoss(ticketLong, NormalizeDouble(stopLoss + USER_TRAIL_STOP_LOSS + 30 * Point, Digits));
+         TrailStopLoss(ticketLong, NormalizeDouble(openPrice + 50 * Point, Digits));
       }
    }
    
@@ -719,12 +764,12 @@ void TrailSL(int magic)
    {
       int ticketShort = FindShort(magic);
       double openPrice = FindOpenPrice(ticketShort);
-      double stopLoss = FindStopLoss(ticketShort);
+      double takeProfit = FindTakeProfit(ticketShort);
       if (
-            stopLoss - Open[0] > 2 * USER_TRAIL_STOP_LOSS
+            MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3
          )
       {
-         TrailStopLoss(ticketShort, NormalizeDouble(stopLoss - USER_TRAIL_STOP_LOSS - 30 * Point, Digits));
+         TrailStopLoss(ticketShort, NormalizeDouble(openPrice - 50 * Point, Digits));
       }
    }
 }
@@ -769,7 +814,7 @@ int OpenLong(double positionSize, int magic, double SL, double TP)
             continue;
       }
       Alert("OpenLong ", Symbol(), ": Ask=", Ask,", SL=",
-         Bid-USER_STOP_LOSS, ", TP=", Bid+USER_TAKE_PROFIT);
+         Bid-SL, ", TP=", Bid+TP);
       Alert("OpenLong ", Symbol(), ": Error ", Error,
          " ", ErrorDescription(Error));
       break;
@@ -817,7 +862,7 @@ int OpenShort(double positionSize, int magic, double SL, double TP)
             continue;
       }
       Alert("OpenShort ", Symbol(), ": Bid=", Bid, ", SL=",
-         Ask+USER_STOP_LOSS, ", TP=", Ask-USER_TAKE_PROFIT);
+         Ask+SL, ", TP=", Ask-TP);
       Alert("OpenShort ", Symbol(), ": Error ", Error,
          " ", ErrorDescription(Error));
       break;
