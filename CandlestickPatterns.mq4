@@ -17,16 +17,12 @@
 //| o Whenever a pattern is detected, a trade opens in the direction |
 //|   the pattern dictates, unless a trade is already open in that   |
 //|   direction for this pattern.                                    |
-//| o All trades that were opened by a bullish pattern, will close   |
-//|   when any bearish pattern is detected                           |
-//| o All trades that were opened by a bearish pattern, will close   |
-//|   when any bullish pattern is detected                           |
 //| o Stop loss is calculated for each pattern, the general rule is  |
 //|   that the SL is set away from the first candlestick at the      |
 //|   pattern's height, but there are variations. Check the code.    |
-//| o Take Profit is set for all trades by the extern variable       |
-//|   USER_TAKE_PROFIT_PIPS                                          |
-//|                                                                  |
+//| o Take Profit is calculated for each pattern similarly to the SL,|
+//|   multiplied by USER_TAKE_PROFIT_MULTIPLIER. For EURUSD set to 2,|
+//|   for GBPUSD set to 1                                            |
 //+------------------------------------------------------------------+
 #include <stderror.mqh>
 #include <stdlib.mqh>
@@ -40,7 +36,6 @@
 //+------------------------------------------------------------------+
 double USER_TAKE_PROFIT=0.0;
 double USER_STOP_LOSS=0.0;
-double USER_TRAIL_STOP_LOSS=0.0;
 int USER_MAGIC_BULLISH_ENGULFING=1000;
 int USER_MAGIC_BEARISH_ENGULFING=1001;
 int USER_MAGIC_THREE_WHITE_SOLDIERS=1002;
@@ -49,10 +44,10 @@ int USER_MAGIC_MORNING_STAR=1004;
 int USER_MAGIC_EVENING_STAR=1005;
 int USER_MAGIC_THREE_INSIDE_UP=1006;
 int USER_MAGIC_THREE_INSIDE_DOWN=1007;
-extern int USER_TAKE_PROFIT_PIPS=2000;                               // Take Profit in pips
-extern int USER_STOP_LOSS_PIPS=200;                                  // Stop Loss in pips
-extern int USER_TRAIL_STOP_LOSS_PIPS=200;                            // Trail Stop Loss distance in pips
+extern int USER_TAKE_PROFIT_PIPS=2000;                               // Default Take Profit in pips
+extern int USER_STOP_LOSS_PIPS=200;                                  // Default Stop Loss in pips
 extern double USER_POSITION=0.01;                                    // Base of position size calculations
+extern int USER_TAKE_PROFIT_MULTIPLIER=1;                            // Multiplies the calculated TP
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
 extern int USER_BACK_PERIODS=24;                                     // How many hours back to check price for support/resistance
 
@@ -68,10 +63,10 @@ int OnInit()
 {
    USER_TAKE_PROFIT = USER_TAKE_PROFIT_PIPS * Point;
    USER_STOP_LOSS = USER_STOP_LOSS_PIPS * Point;
-   USER_TRAIL_STOP_LOSS = USER_TRAIL_STOP_LOSS_PIPS * Point;
    
-   Alert("Init Symbol=", Symbol(), ", TP=", USER_TAKE_PROFIT,
-      ", SL=", USER_STOP_LOSS, ", TrailSL=", USER_TRAIL_STOP_LOSS);
+   Alert("Init Symbol=", Symbol(), ", Default TP=", USER_TAKE_PROFIT,
+      ", TP multiplier=", USER_TAKE_PROFIT_MULTIPLIER,
+      ", Default SL=", USER_STOP_LOSS);
    
    return(INIT_SUCCEEDED);
 }
@@ -584,13 +579,13 @@ double CalculateSL(int magic)
 double CalculateTP(int magic)
 {
    if (magic == USER_MAGIC_BULLISH_ENGULFING) {
-      return (LengthOC(1) + 2 * LengthOC(2));
+      return (LengthOC(1) + USER_TAKE_PROFIT_MULTIPLIER * LengthOC(2));
    } else if (magic == USER_MAGIC_BEARISH_ENGULFING) {
-      return (LengthOC(1) + 2 * LengthOC(2));
+      return (LengthOC(1) + USER_TAKE_PROFIT_MULTIPLIER * LengthOC(2));
    } else if (magic == USER_MAGIC_THREE_WHITE_SOLDIERS) {
-      return (Close[1] - Open[3]);
+      return USER_TAKE_PROFIT_MULTIPLIER * (Close[1] - Open[3]);
    } else if (magic == USER_MAGIC_THREE_BLACK_CROWS) {
-      return (Open[3] - Close[1]);
+      return USER_TAKE_PROFIT_MULTIPLIER * (Open[3] - Close[1]);
    } else if (magic == USER_MAGIC_MORNING_STAR) {
       return USER_TAKE_PROFIT;
    } else if (magic == USER_MAGIC_EVENING_STAR) {
