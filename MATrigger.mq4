@@ -83,13 +83,21 @@ void OnTick()
    // Check conditions to open long
    if (UptrendOpeningConfirmed() && !LongIsOpen(USER_MAGIC_LONG))
    {
-      OpenLong(CalculatePositionSize(USER_MAGIC_LONG));
+      OpenLong(
+         CalculatePositionSize(USER_MAGIC_LONG),
+         USER_MAGIC_LONG,
+         USER_STOP_LOSS,
+         USER_TAKE_PROFIT);
    }
 
    // Check conditions to open short
    if (DowntrendOpeningConfirmed() && !ShortIsOpen(USER_MAGIC_SHORT))
    {
-      OpenShort(CalculatePositionSize(USER_MAGIC_SHORT));
+      OpenShort(
+         CalculatePositionSize(USER_MAGIC_SHORT),
+         USER_MAGIC_SHORT,
+         USER_STOP_LOSS,
+         USER_TAKE_PROFIT);
    }
    
    TrailSL(USER_MAGIC_LONG);
@@ -325,7 +333,11 @@ void TrailSL(int magic)
             )
          {
             TrailStopLoss(ticketLong, NormalizeDouble(openPrice + USER_TRAIL_STOP_LOSS, Digits));
-            OpenLong(CalculatePositionSize(USER_MAGIC_LONG));
+            OpenLong(
+               CalculatePositionSize(USER_MAGIC_LONG),
+               USER_MAGIC_LONG,
+               USER_STOP_LOSS,
+               USER_TAKE_PROFIT);
          }
          i++;
       }
@@ -348,7 +360,11 @@ void TrailSL(int magic)
             )
          {
             TrailStopLoss(ticketShort, NormalizeDouble(openPrice - USER_TRAIL_STOP_LOSS, Digits));
-            OpenShort(CalculatePositionSize(USER_MAGIC_SHORT));
+            OpenShort(
+               CalculatePositionSize(USER_MAGIC_SHORT),
+               USER_MAGIC_SHORT,
+               USER_STOP_LOSS,
+               USER_TAKE_PROFIT);
          }
          i++;
       }
@@ -359,7 +375,7 @@ void TrailSL(int magic)
 //| User function OpenLong()                                         |
 //| Send a market buy order                                          |
 //+------------------------------------------------------------------+
-int OpenLong(double positionSize)
+int OpenLong(double positionSize, int magic, double SL, double TP)
 {
    int ticket=-1;
    while (true)
@@ -370,10 +386,10 @@ int OpenLong(double positionSize)
          positionSize,
          Ask,
          3,
-         Bid-USER_STOP_LOSS,
-         Bid+USER_TAKE_PROFIT,
-         "MATrigger",
-         USER_MAGIC_LONG);
+         Bid-SL,
+         Bid+TP,
+         "CandlestickPatterns",
+         magic);
       if (ticket>0)
          break;
       int Error=GetLastError();
@@ -394,8 +410,8 @@ int OpenLong(double positionSize)
             RefreshRates();
             continue;
       }
-      Alert("OpenLong ", Symbol(), ": Ask=", Ask, ", SL=",
-         Bid-USER_STOP_LOSS, ", TP=", Bid+USER_TAKE_PROFIT);
+      Alert("OpenLong ", Symbol(), ": Ask=", Ask,", SL=",
+         Bid-SL, ", TP=", Bid+TP);
       Alert("OpenLong ", Symbol(), ": Error ", Error,
          " ", ErrorDescription(Error));
       break;
@@ -407,7 +423,7 @@ int OpenLong(double positionSize)
 //| User function OpenShort()                                        |
 //| Send a market sell order                                         |
 //+------------------------------------------------------------------+
-int OpenShort(double positionSize)
+int OpenShort(double positionSize, int magic, double SL, double TP)
 {
    int ticket=-1;
    while (true)
@@ -418,10 +434,10 @@ int OpenShort(double positionSize)
          positionSize,
          Bid,
          3,
-         Ask+USER_STOP_LOSS,
-         Ask-USER_TAKE_PROFIT,
-         "MATrigger",
-         USER_MAGIC_SHORT);
+         Ask+SL,
+         Ask-TP,
+         "CandlestickPatterns",
+         magic);
       if (ticket>0)
          break;
       int Error=GetLastError();
@@ -443,7 +459,7 @@ int OpenShort(double positionSize)
             continue;
       }
       Alert("OpenShort ", Symbol(), ": Bid=", Bid, ", SL=",
-         Ask+USER_STOP_LOSS, ", TP=", Ask-USER_TAKE_PROFIT);
+         Ask+SL, ", TP=", Ask-TP);
       Alert("OpenShort ", Symbol(), ": Error ", Error,
          " ", ErrorDescription(Error));
       break;
