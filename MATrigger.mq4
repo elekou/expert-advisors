@@ -31,6 +31,7 @@ int USER_MAGIC_SHORT=902;                                            // Identifi
 extern int USER_TAKE_PROFIT_PIPS=1000;                               // Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=500;                                  // Stop Loss in pips
 extern int USER_TRAIL_STOP_LOSS_PIPS=200;                            // Trail Stop Loss distance in pips
+extern int USER_SEK_MULTIPLIER=1;                                    // For EURSEK, set to 10.
 extern double USER_POSITION=0.01;                                    // Position size
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
 
@@ -45,9 +46,9 @@ double longSMA = 0.0, longSMA_prev = 0.0;
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   USER_TAKE_PROFIT = USER_TAKE_PROFIT_PIPS * Point;
-   USER_STOP_LOSS = USER_STOP_LOSS_PIPS * Point;
-   USER_TRAIL_STOP_LOSS = USER_TRAIL_STOP_LOSS_PIPS * Point;
+   USER_TAKE_PROFIT = USER_SEK_MULTIPLIER * USER_TAKE_PROFIT_PIPS * Point;
+   USER_STOP_LOSS = USER_SEK_MULTIPLIER * USER_STOP_LOSS_PIPS * Point;
+   USER_TRAIL_STOP_LOSS = USER_SEK_MULTIPLIER * USER_TRAIL_STOP_LOSS_PIPS * Point;
    
    Alert("Init Symbol=", Symbol(), ", TP=", USER_TAKE_PROFIT,
       ", SL=", USER_STOP_LOSS, ", TrailSL=", USER_TRAIL_STOP_LOSS);
