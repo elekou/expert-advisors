@@ -48,6 +48,14 @@ extern int USER_TAKE_PROFIT_PIPS=2000;                               // Default 
 extern int USER_STOP_LOSS_PIPS=200;                                  // Default Stop Loss in pips
 extern double USER_POSITION=0.01;                                    // Base of position size calculations
 extern int USER_TAKE_PROFIT_MULTIPLIER=1;                            // Multiplies the calculated TP
+extern bool ENABLE_BULLISH_ENGULFING=true;
+extern bool ENABLE_BEARISH_ENGULFING=true;
+extern bool ENABLE_THREE_WHITE_SOLDIERS=true;
+extern bool ENABLE_THREE_BLACK_CROWS=true;
+extern bool ENABLE_MORNING_STAR=true;
+extern bool ENABLE_EVENING_STAR=true;
+extern bool ENABLE_THREE_INSIDE_UP=true;
+extern bool ENABLE_THREE_INSIDE_DOWN=true;
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
 extern int USER_BACK_PERIODS=24;                                     // How many hours back to check price for support/resistance
 
@@ -94,12 +102,14 @@ void OnTick()
    //| Bullish Engulfing                                             |
    //+---------------------------------------------------------------+
    if (
+     ENABLE_BULLISH_ENGULFING &&
      OpenBullishEngulfing() &&
      !LongIsOpen(USER_MAGIC_BULLISH_ENGULFING)
    ){
       OpenLong(
          CalculatePositionSize(USER_MAGIC_BULLISH_ENGULFING),
          USER_MAGIC_BULLISH_ENGULFING,
+         "Bullish Engulfing",
          CalculateSL(USER_MAGIC_BULLISH_ENGULFING),
          CalculateTP(USER_MAGIC_BULLISH_ENGULFING));
    }
@@ -116,12 +126,14 @@ void OnTick()
    //| Bearish Engulfing                                             |
    //+---------------------------------------------------------------+
    if (
+     ENABLE_BEARISH_ENGULFING &&
      OpenBearishEngulfing() &&
      !ShortIsOpen(USER_MAGIC_BEARISH_ENGULFING)
    ){
       OpenShort(
          CalculatePositionSize(USER_MAGIC_BEARISH_ENGULFING),
          USER_MAGIC_BEARISH_ENGULFING,
+         "Bearish Engulfing",
          CalculateSL(USER_MAGIC_BEARISH_ENGULFING),
          CalculateTP(USER_MAGIC_BEARISH_ENGULFING));
    }
@@ -138,12 +150,14 @@ void OnTick()
    //| Three White Soldiers                                          |
    //+---------------------------------------------------------------+
    if (
+      ENABLE_THREE_WHITE_SOLDIERS &&
       OpenThreeWhiteSoldiers() &&
       !LongIsOpen(USER_MAGIC_THREE_WHITE_SOLDIERS)
    ){
       OpenLong(
          CalculatePositionSize(USER_MAGIC_THREE_WHITE_SOLDIERS),
          USER_MAGIC_THREE_WHITE_SOLDIERS,
+         "3 White Soldiers",
          CalculateSL(USER_MAGIC_THREE_WHITE_SOLDIERS),
          CalculateTP(USER_MAGIC_THREE_WHITE_SOLDIERS));
    }
@@ -160,12 +174,14 @@ void OnTick()
    //| Three Black Crows                                             |
    //+---------------------------------------------------------------+
    if (
+      ENABLE_THREE_BLACK_CROWS &&
       OpenThreeBlackCrows() &&
       !ShortIsOpen(USER_MAGIC_THREE_BLACK_CROWS)
    ){
       OpenShort(
          CalculatePositionSize(USER_MAGIC_THREE_BLACK_CROWS),
          USER_MAGIC_THREE_BLACK_CROWS,
+         "3 Black Crows",
          CalculateSL(USER_MAGIC_THREE_BLACK_CROWS),
          CalculateTP(USER_MAGIC_THREE_BLACK_CROWS));
    }
@@ -182,12 +198,14 @@ void OnTick()
    //| Morning Star                                                  |
    //+---------------------------------------------------------------+
    if (
+      ENABLE_MORNING_STAR &&
       OpenMorningStar() &&
       !LongIsOpen(USER_MAGIC_MORNING_STAR)
    ){
       OpenLong(
          CalculatePositionSize(USER_MAGIC_MORNING_STAR),
          USER_MAGIC_MORNING_STAR,
+         "Morning Star",
          CalculateSL(USER_MAGIC_MORNING_STAR),
          CalculateTP(USER_MAGIC_MORNING_STAR));
    }
@@ -204,12 +222,14 @@ void OnTick()
    //| Evening Star                                                  |
    //+---------------------------------------------------------------+
    if (
+      ENABLE_EVENING_STAR &&
       OpenEveningStar() &&
       !ShortIsOpen(USER_MAGIC_EVENING_STAR)
    ){
       OpenShort(
          CalculatePositionSize(USER_MAGIC_EVENING_STAR),
          USER_MAGIC_EVENING_STAR,
+         "Evening Star",
          CalculateSL(USER_MAGIC_EVENING_STAR),
          CalculateTP(USER_MAGIC_EVENING_STAR));
    }
@@ -226,12 +246,14 @@ void OnTick()
    //| Three Inside Up                                               |
    //+---------------------------------------------------------------+
    if (
+      ENABLE_THREE_INSIDE_UP &&
       OpenThreeInsideUp() &&
       !LongIsOpen(USER_MAGIC_THREE_INSIDE_UP)
    ){
       OpenLong(
          CalculatePositionSize(USER_MAGIC_THREE_INSIDE_UP),
          USER_MAGIC_THREE_INSIDE_UP,
+         "3 Inside Up",
          CalculateSL(USER_MAGIC_THREE_INSIDE_UP),
          CalculateTP(USER_MAGIC_THREE_INSIDE_UP));
    }
@@ -248,12 +270,14 @@ void OnTick()
    //| Three Inside Down                                             |
    //+---------------------------------------------------------------+
    if (
+      ENABLE_THREE_INSIDE_DOWN &&
       OpenThreeInsideDown() &&
       !ShortIsOpen(USER_MAGIC_THREE_INSIDE_DOWN)
    ){
       OpenShort(
          CalculatePositionSize(USER_MAGIC_THREE_INSIDE_DOWN),
          USER_MAGIC_THREE_INSIDE_DOWN,
+         "3 Inside Down",
          CalculateSL(USER_MAGIC_THREE_INSIDE_DOWN),
          CalculateTP(USER_MAGIC_THREE_INSIDE_DOWN));
    }
@@ -773,7 +797,7 @@ void TrailSL(int magic)
 //| User function OpenLong()                                         |
 //| Send a market buy order                                          |
 //+------------------------------------------------------------------+
-int OpenLong(double positionSize, int magic, double SL, double TP)
+int OpenLong(double positionSize, int magic, string magicName, double SL, double TP)
 {
    int ticket=-1;
    while (true)
@@ -786,7 +810,7 @@ int OpenLong(double positionSize, int magic, double SL, double TP)
          3,
          Bid-SL,
          Bid+TP,
-         "CandlestickPatterns",
+         magicName,
          magic);
       if (ticket>0)
          break;
@@ -821,7 +845,7 @@ int OpenLong(double positionSize, int magic, double SL, double TP)
 //| User function OpenShort()                                        |
 //| Send a market sell order                                         |
 //+------------------------------------------------------------------+
-int OpenShort(double positionSize, int magic, double SL, double TP)
+int OpenShort(double positionSize, int magic, string magicName, double SL, double TP)
 {
    int ticket=-1;
    while (true)
@@ -834,7 +858,7 @@ int OpenShort(double positionSize, int magic, double SL, double TP)
          3,
          Ask+SL,
          Ask-TP,
-         "CandlestickPatterns",
+         magicName,
          magic);
       if (ticket>0)
          break;
