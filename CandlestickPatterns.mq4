@@ -47,7 +47,7 @@ int USER_MAGIC_THREE_INSIDE_DOWN=1007;
 extern int USER_TAKE_PROFIT_PIPS=2000;                               // Default Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=200;                                  // Default Stop Loss in pips
 extern double USER_POSITION=0.01;                                    // Base of position size calculations
-extern int USER_TAKE_PROFIT_MULTIPLIER=1;                            // Multiplies the calculated TP
+extern int USER_TAKE_PROFIT_MULTIPLIER=2;                            // Multiplies the calculated TP
 extern bool ENABLE_BULLISH_ENGULFING=true;
 extern bool ENABLE_BEARISH_ENGULFING=true;
 extern bool ENABLE_THREE_WHITE_SOLDIERS=true;
@@ -208,6 +208,12 @@ void OnTick()
          "Morning Star",
          CalculateSL(USER_MAGIC_MORNING_STAR),
          CalculateTP(USER_MAGIC_MORNING_STAR));
+       OpenShort(
+         CalculatePositionSize(USER_MAGIC_EVENING_STAR),
+         USER_MAGIC_EVENING_STAR,
+         "Evening Star",
+         CalculateSL(USER_MAGIC_EVENING_STAR),
+         CalculateTP(USER_MAGIC_EVENING_STAR));
    }
 
    if (
@@ -232,6 +238,12 @@ void OnTick()
          "Evening Star",
          CalculateSL(USER_MAGIC_EVENING_STAR),
          CalculateTP(USER_MAGIC_EVENING_STAR));
+      OpenLong(
+         CalculatePositionSize(USER_MAGIC_MORNING_STAR),
+         USER_MAGIC_MORNING_STAR,
+         "Morning Star",
+         CalculateSL(USER_MAGIC_MORNING_STAR),
+         CalculateTP(USER_MAGIC_MORNING_STAR));
    }
  
    if (
@@ -585,9 +597,9 @@ double CalculateSL(int magic)
    } else if (magic == USER_MAGIC_THREE_BLACK_CROWS) {
       return 2 * (Open[3] - Close[1]);
    } else if (magic == USER_MAGIC_MORNING_STAR) {
-      return LengthOC(3);
+      return LengthOC(1);
    } else if (magic == USER_MAGIC_EVENING_STAR) {
-      return LengthOC(3);
+      return LengthOC(1);
    } else if (magic == USER_MAGIC_THREE_INSIDE_UP) {
       return LengthOC(2) + LengthOC(3);
    } else if (magic == USER_MAGIC_THREE_INSIDE_DOWN) {
@@ -770,11 +782,13 @@ void TrailSL(int magic)
       int ticketLong = FindLong(magic);
       double openPrice = FindOpenPrice(ticketLong);
       double takeProfit = FindTakeProfit(ticketLong);
+      double stopLoss = FindStopLoss(ticketLong);
       if (
-            MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3
+            MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3 &&
+            stopLoss < openPrice
          )
       {
-         TrailStopLoss(ticketLong, NormalizeDouble(openPrice + 50 * Point, Digits));
+         TrailStopLoss(ticketLong, NormalizeDouble(openPrice + USER_TAKE_PROFIT/2, Digits));
       }
    }
    
@@ -784,11 +798,13 @@ void TrailSL(int magic)
       int ticketShort = FindShort(magic);
       double openPrice = FindOpenPrice(ticketShort);
       double takeProfit = FindTakeProfit(ticketShort);
+      double stopLoss = FindStopLoss(ticketShort);
       if (
-            MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3
+            MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3 &&
+            stopLoss > openPrice
          )
       {
-         TrailStopLoss(ticketShort, NormalizeDouble(openPrice - 50 * Point, Digits));
+         TrailStopLoss(ticketShort, NormalizeDouble(openPrice - USER_TAKE_PROFIT/2, Digits));
       }
    }
 }
