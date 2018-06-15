@@ -309,8 +309,8 @@ void OnTick()
 //   TrailSL(USER_MAGIC_BULLISH_ENGULFING);
    TrailSL(USER_MAGIC_EVENING_STAR);
    TrailSL(USER_MAGIC_MORNING_STAR);
-   TrailSL(USER_MAGIC_THREE_BLACK_CROWS);
-   TrailSL(USER_MAGIC_THREE_WHITE_SOLDIERS);
+//   TrailSL(USER_MAGIC_THREE_BLACK_CROWS);
+//   TrailSL(USER_MAGIC_THREE_WHITE_SOLDIERS);
    TrailSL(USER_MAGIC_THREE_INSIDE_DOWN);
    TrailSL(USER_MAGIC_THREE_INSIDE_UP);
    
@@ -448,9 +448,9 @@ bool OpenBearishEngulfing()
 bool ThreeWhiteSoldiers(int shift)
 {
    return (
-      IsGreen(shift)   && LengthOC(shift)   > 10 * Point &&
-      IsGreen(shift+1) && LengthOC(shift+1) > 10 * Point &&
-      IsGreen(shift+2) && LengthOC(shift+2) > 10 * Point
+      IsGreen(shift)   && LengthOC(shift)   > 10 * Point && LengthOC(shift)   < 30 * Point &&
+      IsGreen(shift+1) && LengthOC(shift+1) > 10 * Point && LengthOC(shift+1)   < 30 * Point &&
+      IsGreen(shift+2) && LengthOC(shift+2) > 10 * Point && LengthOC(shift+2)   < 30 * Point
    );
 }
 
