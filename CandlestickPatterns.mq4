@@ -47,7 +47,6 @@ int USER_MAGIC_THREE_INSIDE_DOWN=1007;
 extern int USER_TAKE_PROFIT_PIPS=2000;                               // Default Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=200;                                  // Default Stop Loss in pips
 extern double USER_POSITION=0.01;                                    // Base of position size calculations
-extern int USER_TAKE_PROFIT_MULTIPLIER=2;                            // Multiplies the calculated TP
 extern bool ENABLE_BULLISH_ENGULFING=true;
 extern bool ENABLE_BEARISH_ENGULFING=true;
 extern bool ENABLE_THREE_WHITE_SOLDIERS=true;
@@ -63,6 +62,7 @@ extern int USER_BACK_PERIODS=24;                                     // How many
 //| Indicator variables, re-calculated on every new bar.             |
 //+------------------------------------------------------------------+
 
+double ma24 = 0.0;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -73,7 +73,6 @@ int OnInit()
    USER_STOP_LOSS = USER_STOP_LOSS_PIPS * Point;
    
    Alert("Init Symbol=", Symbol(), ", Default TP=", USER_TAKE_PROFIT,
-      ", TP multiplier=", USER_TAKE_PROFIT_MULTIPLIER,
       ", Default SL=", USER_STOP_LOSS);
    
    return(INIT_SUCCEEDED);
@@ -97,6 +96,10 @@ void OnTick()
       return;
    
    Log();
+   
+   
+   // Re-calculate indicators
+   ma24 = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 48), Digits);
 
    //+---------------------------------------------------------------+
    //| Bullish Engulfing                                             |
@@ -200,7 +203,8 @@ void OnTick()
    if (
       ENABLE_MORNING_STAR &&
       OpenMorningStar() &&
-      !LongIsOpen(USER_MAGIC_MORNING_STAR)
+      !LongIsOpen(USER_MAGIC_MORNING_STAR) &&
+      !ShortIsOpen(USER_MAGIC_EVENING_STAR)
    ){
       OpenLong(
          CalculatePositionSize(USER_MAGIC_MORNING_STAR),
@@ -208,12 +212,6 @@ void OnTick()
          "Morning Star",
          CalculateSL(USER_MAGIC_MORNING_STAR),
          CalculateTP(USER_MAGIC_MORNING_STAR));
-       OpenShort(
-         CalculatePositionSize(USER_MAGIC_EVENING_STAR),
-         USER_MAGIC_EVENING_STAR,
-         "Evening Star",
-         CalculateSL(USER_MAGIC_EVENING_STAR),
-         CalculateTP(USER_MAGIC_EVENING_STAR));
    }
 
    if (
@@ -230,7 +228,8 @@ void OnTick()
    if (
       ENABLE_EVENING_STAR &&
       OpenEveningStar() &&
-      !ShortIsOpen(USER_MAGIC_EVENING_STAR)
+      !ShortIsOpen(USER_MAGIC_EVENING_STAR) &&
+      !LongIsOpen(USER_MAGIC_MORNING_STAR)
    ){
       OpenShort(
          CalculatePositionSize(USER_MAGIC_EVENING_STAR),
@@ -238,12 +237,6 @@ void OnTick()
          "Evening Star",
          CalculateSL(USER_MAGIC_EVENING_STAR),
          CalculateTP(USER_MAGIC_EVENING_STAR));
-      OpenLong(
-         CalculatePositionSize(USER_MAGIC_MORNING_STAR),
-         USER_MAGIC_MORNING_STAR,
-         "Morning Star",
-         CalculateSL(USER_MAGIC_MORNING_STAR),
-         CalculateTP(USER_MAGIC_MORNING_STAR));
    }
  
    if (
@@ -311,8 +304,8 @@ void OnTick()
    TrailSL(USER_MAGIC_MORNING_STAR);
 //   TrailSL(USER_MAGIC_THREE_BLACK_CROWS);
 //   TrailSL(USER_MAGIC_THREE_WHITE_SOLDIERS);
-   TrailSL(USER_MAGIC_THREE_INSIDE_DOWN);
-   TrailSL(USER_MAGIC_THREE_INSIDE_UP);
+//   TrailSL(USER_MAGIC_THREE_INSIDE_DOWN);
+//   TrailSL(USER_MAGIC_THREE_INSIDE_UP);
    
 }
 
@@ -376,12 +369,12 @@ bool IsHighest(int shift)
       for (int i=shift+1; i<shift+USER_BACK_PERIODS; i++)
          if (High[i] > Close[shift] + lengthOC)
             return false;
-      return true;
+      return High[shift] - ma24 > 1000 * Point;
    } else {
       for (int i=shift+1; i<shift+USER_BACK_PERIODS; i++)
          if (High[i] > Open[shift] + lengthOC)
             return false;
-      return true;   
+      return High[shift] - ma24 > 1000 * Point;
    }
 }
 
@@ -393,12 +386,12 @@ bool IsLowest(int shift)
       for (int i=shift+1; i<shift+USER_BACK_PERIODS; i++)
          if (Low[i] < Open[shift] - lengthOC)
             return false;
-      return true;
+      return ma24 - Low[shift] > 1000 * Point;
    } else {
       for (int i=shift+1; i<shift+USER_BACK_PERIODS; i++)
          if (Low[i] < Close[shift] - lengthOC)
             return false;
-      return true;   
+      return ma24 - Low[shift] > 1000 * Point;   
    }
 }
 
@@ -448,32 +441,34 @@ bool OpenBearishEngulfing()
 bool ThreeWhiteSoldiers(int shift)
 {
    return (
-      IsGreen(shift)   && LengthOC(shift)   > 10 * Point && LengthOC(shift)   < 30 * Point &&
-      IsGreen(shift+1) && LengthOC(shift+1) > 10 * Point && LengthOC(shift+1)   < 30 * Point &&
-      IsGreen(shift+2) && LengthOC(shift+2) > 10 * Point && LengthOC(shift+2)   < 30 * Point
+      IsGreen(shift)   &&
+      IsGreen(shift+1) &&
+      IsGreen(shift+2) &&
+      IsRed(shift+3)
    );
 }
 
 bool ThreeBlackCrows(int shift)
 {
    return (
-      IsRed(shift)   && LengthOC(shift)   > 10 * Point &&
-      IsRed(shift+1) && LengthOC(shift+1) > 10 * Point &&
-      IsRed(shift+2) && LengthOC(shift+2) > 10 * Point
+      IsRed(shift)   &&
+      IsRed(shift+1) &&
+      IsRed(shift+2) &&
+      IsGreen(shift+3)
    );
 }
 
 bool OpenThreeWhiteSoldiers()
 {
    return (
-      ThreeWhiteSoldiers(1) && IsLowest(3)
+      ThreeWhiteSoldiers(1) && ma24 - Low[3] > 1000 * Point
    );
 }
 
 bool OpenThreeBlackCrows()
 {
    return (
-      ThreeBlackCrows(1) && IsHighest(3)
+      ThreeBlackCrows(1) && High[3] - ma24 > 1000 * Point
    );
 }
 
@@ -485,32 +480,34 @@ bool OpenThreeBlackCrows()
 bool MorningStar(int shift)
 {
    return (
-      IsRed(shift+2) && LengthOC(shift+2) > 20 * Point &&
-                        LengthOC(shift+1) <= 20 * Point &&
-      IsGreen(shift) && LengthOC(shift) > LengthOC(shift+2)/2
+      IsRed(shift+3) && LengthOC(shift+3) > 40 * Point &&
+                        LengthOC(shift+2) <= 20 * Point &&
+      IsGreen(shift+1) && LengthOC(shift+1) > LengthOC(shift+3)/2 &&
+      IsGreen(shift)
    );
 }
 
 bool EveningStar(int shift)
 {
    return (
-      IsGreen(shift+2) && LengthOC(shift+2) > 20 * Point &&
-                        LengthOC(shift+1) <= 20 * Point &&
-      IsRed(shift) && LengthOC(shift) > LengthOC(shift+2)/2
+      IsGreen(shift+3) && LengthOC(shift+3) > 40 * Point &&
+                        LengthOC(shift+2) <= 20 * Point &&
+      IsRed(shift+1) && LengthOC(shift+1) > LengthOC(shift+3)/2 &&
+      IsRed(shift)
    );
 }
 
 bool OpenMorningStar()
 {
    return (
-      MorningStar(1) && IsLowest(3)
+      MorningStar(1) && ma24 - Low[3] > 1000 * Point
    );
 }
 
 bool OpenEveningStar()
 {
    return (
-      EveningStar(1) && IsHighest(3)
+      EveningStar(1) && High[3] - ma24 > 1000 * Point
    );
 }
 
@@ -593,13 +590,13 @@ double CalculateSL(int magic)
    } else if (magic == USER_MAGIC_BEARISH_ENGULFING) {
       return (LengthOC(1) + 2 * LengthOC(2));
    } else if (magic == USER_MAGIC_THREE_WHITE_SOLDIERS) {
-      return 2 * (Close[1] - Open[3]);
+      return LengthOC(1) + LengthOC(2) + LengthOC(3);
    } else if (magic == USER_MAGIC_THREE_BLACK_CROWS) {
-      return 2 * (Open[3] - Close[1]);
+      return LengthOC(1) + LengthOC(2) + LengthOC(3);
    } else if (magic == USER_MAGIC_MORNING_STAR) {
-      return LengthOC(1);
+      return LengthOC(1) + LengthOC(2);
    } else if (magic == USER_MAGIC_EVENING_STAR) {
-      return LengthOC(1);
+      return LengthOC(1) + LengthOC(2);
    } else if (magic == USER_MAGIC_THREE_INSIDE_UP) {
       return LengthOC(2) + LengthOC(3);
    } else if (magic == USER_MAGIC_THREE_INSIDE_DOWN) {
@@ -619,9 +616,9 @@ double CalculateTP(int magic)
    } else if (magic == USER_MAGIC_BEARISH_ENGULFING) {
       return (LengthOC(1) + 1 * LengthOC(2));
    } else if (magic == USER_MAGIC_THREE_WHITE_SOLDIERS) {
-      return USER_TAKE_PROFIT_MULTIPLIER * (Close[1] - Open[3]);
+      return LengthOC(1) + LengthOC(2) + LengthOC(3);
    } else if (magic == USER_MAGIC_THREE_BLACK_CROWS) {
-      return USER_TAKE_PROFIT_MULTIPLIER * (Open[3] - Close[1]);
+      return LengthOC(1) + LengthOC(2) + LengthOC(3);
    } else if (magic == USER_MAGIC_MORNING_STAR) {
       return USER_TAKE_PROFIT;
    } else if (magic == USER_MAGIC_EVENING_STAR) {
@@ -788,7 +785,8 @@ void TrailSL(int magic)
             stopLoss < openPrice
          )
       {
-         TrailStopLoss(ticketLong, NormalizeDouble(openPrice + MathAbs(takeProfit - openPrice)/2, Digits));
+         TrailStopLoss(ticketLong, NormalizeDouble(openPrice + MathAbs(takeProfit - openPrice)/3, Digits));
+         MoveTakeProfit(ticketLong, NormalizeDouble(takeProfit + MathAbs(takeProfit - openPrice)/3, Digits));
       }
    }
    
@@ -804,7 +802,8 @@ void TrailSL(int magic)
             stopLoss > openPrice
          )
       {
-         TrailStopLoss(ticketShort, NormalizeDouble(openPrice - MathAbs(takeProfit - openPrice)/2, Digits));
+         TrailStopLoss(ticketShort, NormalizeDouble(openPrice - MathAbs(takeProfit - openPrice)/3, Digits));
+         MoveTakeProfit(ticketShort, NormalizeDouble(takeProfit - MathAbs(takeProfit - openPrice)/3, Digits));
       }
    }
 }
@@ -1011,6 +1010,47 @@ void TrailStopLoss(int ticket, double SL)
             continue;
       }
       Alert("TrailStopLoss #", ticket, ": Error ", Error,
+         " ", ErrorDescription(Error));
+      break;
+   } 
+}
+
+//+------------------------------------------------------------------+
+//| User function MoveTakeProfit()                                   |
+//| Modify the TP of an open market order                            |
+//+------------------------------------------------------------------+
+void MoveTakeProfit(int ticket, double TP)
+{
+   while (true)
+   {
+      bool select = OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES);
+      if (!select)
+      {
+         Alert("MoveTakeProfit #", ticket, ": Error: Could not select order");
+         break;
+      }
+      bool success = OrderModify(ticket, OrderOpenPrice(), OrderStopLoss(), TP, 0);
+      if (success)
+         break;
+      int Error=GetLastError();
+      switch(Error)  // Overcomable errors
+      {
+         case 135:Alert("MoveTakeProfit #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying..");
+            RefreshRates();
+            continue;
+         case 136:Alert("MoveTakeProfit #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Waiting for a new tick..");
+            while(RefreshRates()==false)
+               Sleep(1);
+            continue;
+         case 146:Alert("MoveTakeProfit #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying..");
+            Sleep(500);
+            RefreshRates();
+            continue;
+      }
+      Alert("MoveTakeProfit #", ticket, ": Error ", Error,
          " ", ErrorDescription(Error));
       break;
    }
