@@ -28,7 +28,7 @@ double USER_STOP_LOSS=0.0;
 double USER_TRAIL_STOP_LOSS=0.0;
 int USER_MAGIC_LONG=901;                                             // Identifies this EA's long positions
 int USER_MAGIC_SHORT=902;                                            // Identifies this EA's short positions
-extern int USER_TAKE_PROFIT_PIPS=1000;                               // Take Profit in pips
+extern int USER_TAKE_PROFIT_PIPS=1800;                               // Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=500;                                  // Stop Loss in pips
 extern int USER_TRAIL_STOP_LOSS_PIPS=200;                            // Trail Stop Loss distance in pips
 extern int USER_SEK_MULTIPLIER=1;                                    // For EURSEK, set to 10.
@@ -40,6 +40,7 @@ extern bool USER_LOGGER_DEBUG=false;                                 // Enable o
 //+------------------------------------------------------------------+
 double shortSMA = 0.0, shortSMA_prev = 0.0;
 double longSMA = 0.0, longSMA_prev = 0.0;
+double ma24 = 0.0;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -74,31 +75,34 @@ void OnTick()
       return;
       
    // Re-calculate indicators
-   shortSMA = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 1), Digits);
-   shortSMA_prev = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 2), Digits);
-   longSMA = NormalizeDouble(iMA(NULL, 0, 48, 0, MODE_SMA, PRICE_CLOSE, 1), Digits);
-   longSMA_prev = NormalizeDouble(iMA(NULL, 0, 48, 0, MODE_SMA, PRICE_CLOSE, 2), Digits);
+   shortSMA = NormalizeDouble(iMA(NULL, 0, 48, 0, MODE_SMA, PRICE_CLOSE, 1), Digits);
+   shortSMA_prev = NormalizeDouble(iMA(NULL, 0, 48, 0, MODE_SMA, PRICE_CLOSE, 2), Digits);
+   longSMA = NormalizeDouble(iMA(NULL, 0, 96, 0, MODE_SMA, PRICE_CLOSE, 1), Digits);
+   longSMA_prev = NormalizeDouble(iMA(NULL, 0, 96, 0, MODE_SMA, PRICE_CLOSE, 2), Digits);
+   ma24 = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 48), Digits);
    
    Log();
       
    // Check conditions to open long
-   if (UptrendOpeningConfirmed() && !LongIsOpen(USER_MAGIC_LONG))
+   if (UptrendOpeningConfirmed() && !ShortIsOpen(USER_MAGIC_SHORT))
    {
       OpenLong(
          CalculatePositionSize(USER_MAGIC_LONG),
          USER_MAGIC_LONG,
-         USER_STOP_LOSS,
-         USER_TAKE_PROFIT);
+         "MATrigger",
+         CalculateSL(USER_MAGIC_LONG),
+         CalculateTP(USER_MAGIC_LONG));
    }
 
    // Check conditions to open short
-   if (DowntrendOpeningConfirmed() && !ShortIsOpen(USER_MAGIC_SHORT))
+   if (DowntrendOpeningConfirmed() && !LongIsOpen(USER_MAGIC_LONG))
    {
       OpenShort(
          CalculatePositionSize(USER_MAGIC_SHORT),
          USER_MAGIC_SHORT,
-         USER_STOP_LOSS,
-         USER_TAKE_PROFIT);
+         "MATrigger",
+         CalculateSL(USER_MAGIC_SHORT),
+         CalculateTP(USER_MAGIC_SHORT));
    }
    
    TrailSL(USER_MAGIC_LONG);
@@ -133,6 +137,41 @@ bool NewBar()
       return false;
    }
 }
+
+//+------------------------------------------------------------------+
+//| Common Functions                                                 |
+//+------------------------------------------------------------------+
+
+bool IsGreen(int shift) // IsWhite
+{
+   return (Open[shift] < Close[shift]);
+}
+
+bool IsRed(int shift)   // IsBlack
+{
+   return (Open[shift] > Close[shift]);
+}
+
+double LengthOC(int shift)
+{
+   return MathAbs(Open[shift] - Close[shift]);
+}
+
+double LengthHL(int shift)
+{
+   return MathAbs(High[shift] - Low[shift]);
+}
+
+bool IsHighest(int shift)
+{
+   return High[shift] - ma24 > 1000 * Point;
+}
+
+bool IsLowest(int shift)
+{
+   return ma24 - Low[shift] > 1000 * Point;   
+}
+
 
 //+------------------------------------------------------------------+
 //| User function UptrendConfirmed()                                 |
@@ -313,6 +352,23 @@ double CalculatePositionSize(int magic)
 }
 
 //+------------------------------------------------------------------+
+//| User function CalculateSL                                        |
+//+------------------------------------------------------------------+
+double CalculateSL(int magic)
+{
+   return USER_STOP_LOSS;
+}
+
+//+------------------------------------------------------------------+
+//| User function CalculateTP                                        |
+//+------------------------------------------------------------------+
+double CalculateTP(int magic)
+{
+   return USER_TAKE_PROFIT;
+}
+
+
+//+------------------------------------------------------------------+
 //| User function TrailSL                                            |
 //+------------------------------------------------------------------+
 void TrailSL(int magic)
@@ -333,12 +389,8 @@ void TrailSL(int magic)
                MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3
             )
          {
-            TrailStopLoss(ticketLong, NormalizeDouble(openPrice + USER_TRAIL_STOP_LOSS, Digits));
-            OpenLong(
-               CalculatePositionSize(USER_MAGIC_LONG),
-               USER_MAGIC_LONG,
-               USER_STOP_LOSS,
-               USER_TAKE_PROFIT);
+            TrailStopLoss(ticketLong, NormalizeDouble(openPrice + MathAbs(takeProfit - openPrice)/3, Digits));
+            MoveTakeProfit(ticketLong, NormalizeDouble(takeProfit + MathAbs(takeProfit - openPrice)/3, Digits));
          }
          i++;
       }
@@ -360,12 +412,8 @@ void TrailSL(int magic)
                MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3
             )
          {
-            TrailStopLoss(ticketShort, NormalizeDouble(openPrice - USER_TRAIL_STOP_LOSS, Digits));
-            OpenShort(
-               CalculatePositionSize(USER_MAGIC_SHORT),
-               USER_MAGIC_SHORT,
-               USER_STOP_LOSS,
-               USER_TAKE_PROFIT);
+            TrailStopLoss(ticketShort, NormalizeDouble(openPrice - MathAbs(takeProfit - openPrice)/3, Digits));
+            MoveTakeProfit(ticketShort, NormalizeDouble(takeProfit - MathAbs(takeProfit - openPrice)/3, Digits));
          }
          i++;
       }
@@ -376,7 +424,7 @@ void TrailSL(int magic)
 //| User function OpenLong()                                         |
 //| Send a market buy order                                          |
 //+------------------------------------------------------------------+
-int OpenLong(double positionSize, int magic, double SL, double TP)
+int OpenLong(double positionSize, int magic, string magicName, double SL, double TP)
 {
    int ticket=-1;
    while (true)
@@ -389,7 +437,7 @@ int OpenLong(double positionSize, int magic, double SL, double TP)
          3,
          Bid-SL,
          Bid+TP,
-         "CandlestickPatterns",
+         magicName,
          magic);
       if (ticket>0)
          break;
@@ -424,7 +472,7 @@ int OpenLong(double positionSize, int magic, double SL, double TP)
 //| User function OpenShort()                                        |
 //| Send a market sell order                                         |
 //+------------------------------------------------------------------+
-int OpenShort(double positionSize, int magic, double SL, double TP)
+int OpenShort(double positionSize, int magic, string magicName, double SL, double TP)
 {
    int ticket=-1;
    while (true)
@@ -437,7 +485,7 @@ int OpenShort(double positionSize, int magic, double SL, double TP)
          3,
          Ask+SL,
          Ask-TP,
-         "CandlestickPatterns",
+         magicName,
          magic);
       if (ticket>0)
          break;
@@ -574,6 +622,47 @@ void TrailStopLoss(int ticket, double SL)
             continue;
       }
       Alert("TrailStopLoss #", ticket, ": Error ", Error,
+         " ", ErrorDescription(Error));
+      break;
+   }
+}
+
+//+------------------------------------------------------------------+
+//| User function MoveTakeProfit()                                   |
+//| Modify the TP of an open market order                            |
+//+------------------------------------------------------------------+
+void MoveTakeProfit(int ticket, double TP)
+{
+   while (true)
+   {
+      bool select = OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES);
+      if (!select)
+      {
+         Alert("MoveTakeProfit #", ticket, ": Error: Could not select order");
+         break;
+      }
+      bool success = OrderModify(ticket, OrderOpenPrice(), OrderStopLoss(), TP, 0);
+      if (success)
+         break;
+      int Error=GetLastError();
+      switch(Error)  // Overcomable errors
+      {
+         case 135:Alert("MoveTakeProfit #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying..");
+            RefreshRates();
+            continue;
+         case 136:Alert("MoveTakeProfit #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Waiting for a new tick..");
+            while(RefreshRates()==false)
+               Sleep(1);
+            continue;
+         case 146:Alert("MoveTakeProfit #", ticket, ": Error ", Error,
+            " ", ErrorDescription(Error), ". Retrying..");
+            Sleep(500);
+            RefreshRates();
+            continue;
+      }
+      Alert("MoveTakeProfit #", ticket, ": Error ", Error,
          " ", ErrorDescription(Error));
       break;
    }
