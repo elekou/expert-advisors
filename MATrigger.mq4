@@ -8,10 +8,10 @@
 //| When the 24th crosses above the 48th, it goes long.              |
 //| When the 24th crosses below the 48th it goes short.              |
 //| When the price reaches the 2/3 of distance between open price and|
-//| take profit, it movess the SL USER_STOP_LOSS_PIPS above/below    |
-//| open price, and at the same time it opens another trade in the   |
-//| same direction.                                                  |
-//| It works for EURUSD and GBPUSD.                                  |
+//| take profit, it movess the SL 1/3 of the distance above/below    |
+//| open price, and at the same time it moves the TP by 1/3 of the   |
+//| distance in the same direction.                                  |
+//| It works for EURUSD, EURSEK and GBPUSD.                          |
 //+------------------------------------------------------------------+
 #include <stderror.mqh>
 #include <stdlib.mqh>
@@ -25,12 +25,10 @@
 //+------------------------------------------------------------------+
 double USER_TAKE_PROFIT=0.0;
 double USER_STOP_LOSS=0.0;
-double USER_TRAIL_STOP_LOSS=0.0;
 int USER_MAGIC_LONG=901;                                             // Identifies this EA's long positions
 int USER_MAGIC_SHORT=902;                                            // Identifies this EA's short positions
 extern int USER_TAKE_PROFIT_PIPS=1800;                               // Take Profit in pips
-extern int USER_STOP_LOSS_PIPS=500;                                  // Stop Loss in pips
-extern int USER_TRAIL_STOP_LOSS_PIPS=200;                            // Trail Stop Loss distance in pips
+extern int USER_STOP_LOSS_PIPS=200;                                  // Stop Loss in pips
 extern int USER_SEK_MULTIPLIER=1;                                    // For EURSEK, set to 10.
 extern double USER_POSITION=0.01;                                    // Position size
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
@@ -40,7 +38,6 @@ extern bool USER_LOGGER_DEBUG=false;                                 // Enable o
 //+------------------------------------------------------------------+
 double shortSMA = 0.0, shortSMA_prev = 0.0;
 double longSMA = 0.0, longSMA_prev = 0.0;
-double ma24 = 0.0;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -49,10 +46,9 @@ int OnInit()
 {
    USER_TAKE_PROFIT = USER_SEK_MULTIPLIER * USER_TAKE_PROFIT_PIPS * Point;
    USER_STOP_LOSS = USER_SEK_MULTIPLIER * USER_STOP_LOSS_PIPS * Point;
-   USER_TRAIL_STOP_LOSS = USER_SEK_MULTIPLIER * USER_TRAIL_STOP_LOSS_PIPS * Point;
    
    Alert("Init Symbol=", Symbol(), ", TP=", USER_TAKE_PROFIT,
-      ", SL=", USER_STOP_LOSS, ", TrailSL=", USER_TRAIL_STOP_LOSS);
+      ", SL=", USER_STOP_LOSS, ", SEK Multiplier=", USER_SEK_MULTIPLIER);
    
    return(INIT_SUCCEEDED);
 }
@@ -79,12 +75,11 @@ void OnTick()
    shortSMA_prev = NormalizeDouble(iMA(NULL, 0, 48, 0, MODE_SMA, PRICE_CLOSE, 2), Digits);
    longSMA = NormalizeDouble(iMA(NULL, 0, 96, 0, MODE_SMA, PRICE_CLOSE, 1), Digits);
    longSMA_prev = NormalizeDouble(iMA(NULL, 0, 96, 0, MODE_SMA, PRICE_CLOSE, 2), Digits);
-   ma24 = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 48), Digits);
    
    Log();
       
    // Check conditions to open long
-   if (UptrendOpeningConfirmed() && !ShortIsOpen(USER_MAGIC_SHORT))
+   if (UptrendOpeningConfirmed())
    {
       OpenLong(
          CalculatePositionSize(USER_MAGIC_LONG),
@@ -93,9 +88,22 @@ void OnTick()
          CalculateSL(USER_MAGIC_LONG),
          CalculateTP(USER_MAGIC_LONG));
    }
+   if (
+      LongIsOpen(USER_MAGIC_LONG) &&
+      longSMA > shortSMA
+   ){
+      int longs[10], i=0;
+      FindLong(USER_MAGIC_LONG, longs);
+      while (longs[i]>-1)
+      {
+         int ticket = longs[i];
+         CloseLong(ticket, CalculatePositionSize(USER_MAGIC_LONG));
+         i++;
+      }
+   }
 
    // Check conditions to open short
-   if (DowntrendOpeningConfirmed() && !LongIsOpen(USER_MAGIC_LONG))
+   if (DowntrendOpeningConfirmed())
    {
       OpenShort(
          CalculatePositionSize(USER_MAGIC_SHORT),
@@ -104,10 +112,22 @@ void OnTick()
          CalculateSL(USER_MAGIC_SHORT),
          CalculateTP(USER_MAGIC_SHORT));
    }
+   if (
+      ShortIsOpen(USER_MAGIC_SHORT) &&
+      longSMA < shortSMA
+   ){
+      int shorts[10], i=0;
+      FindShort(USER_MAGIC_SHORT, shorts);
+      while (shorts[i]>-1)
+      {
+         int ticket = shorts[i];
+         CloseShort(ticket, CalculatePositionSize(USER_MAGIC_SHORT));
+         i++;
+      }
+   }
    
    TrailSL(USER_MAGIC_LONG);
    TrailSL(USER_MAGIC_SHORT);
-
 }
 
 //+------------------------------------------------------------------+
@@ -161,17 +181,6 @@ double LengthHL(int shift)
 {
    return MathAbs(High[shift] - Low[shift]);
 }
-
-bool IsHighest(int shift)
-{
-   return High[shift] - ma24 > 1000 * Point;
-}
-
-bool IsLowest(int shift)
-{
-   return ma24 - Low[shift] > 1000 * Point;   
-}
-
 
 //+------------------------------------------------------------------+
 //| User function UptrendConfirmed()                                 |
@@ -253,6 +262,24 @@ bool ShortIsOpen(int magic)
       {
          if (OrderSymbol()!=Symbol()) continue;
          if (OrderType()!=OP_SELL) continue;
+         if (OrderMagicNumber()!=magic) continue;
+         return true;
+      }
+   }
+   return false;
+}
+
+//+------------------------------------------------------------------+
+//| User function IsOpen()                                           |
+//| Returns true when a market order on this security is open        |
+//+------------------------------------------------------------------+
+bool IsOpen(int magic)
+{
+   for (int i=1; i<=OrdersTotal(); i++)
+   {
+      if (OrderSelect(i-1, SELECT_BY_POS)==true)
+      {
+         if (OrderSymbol()!=Symbol()) continue;
          if (OrderMagicNumber()!=magic) continue;
          return true;
       }
@@ -385,7 +412,14 @@ void TrailSL(int magic)
          double takeProfit = FindTakeProfit(ticketLong);
          double stopLoss = FindStopLoss(ticketLong);
          if (
-               stopLoss < openPrice &&
+               MathAbs(Open[0] - openPrice) > MathAbs(takeProfit - openPrice) / 4 &&
+               stopLoss < openPrice
+            )
+         {
+            TrailStopLoss(ticketLong, NormalizeDouble(openPrice, Digits));
+         }
+         if (
+               stopLoss <= openPrice &&
                MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3
             )
          {
@@ -408,7 +442,14 @@ void TrailSL(int magic)
          double takeProfit = FindTakeProfit(ticketShort);
          double stopLoss = FindStopLoss(ticketShort);
          if (
-               stopLoss > openPrice &&
+               MathAbs(Open[0] - openPrice) > MathAbs(takeProfit - openPrice) / 4 &&
+               stopLoss > openPrice
+            )
+         {
+            TrailStopLoss(ticketShort, NormalizeDouble(openPrice, Digits));
+         }
+         if (
+               stopLoss >= openPrice &&
                MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3
             )
          {
