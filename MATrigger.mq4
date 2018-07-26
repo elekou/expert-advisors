@@ -3,15 +3,15 @@
 //|                                              lefterisk@gmail.com |
 //|                                              http://www.mql4.com |
 //+------------------------------------------------------------------+
-//| This EA works with the 24 period SMA and the 48 period SMA on the|
-//| hourly chart.The rules are:                                      |
+//| This EA works with the 24 period SMA, the 48 period SMA and the  |
+//| 96 period SMA on the hourly chart. The rules are:                |
 //| When the 24th crosses above the 48th, it goes long.              |
+//| When the 48th crosses above the 96th, it goes long.              |
 //| When the 24th crosses below the 48th it goes short.              |
-//| When the price reaches the 2/3 of distance between open price and|
-//| take profit, it movess the SL 1/3 of the distance above/below    |
-//| open price, and at the same time it moves the TP by 1/3 of the   |
-//| distance in the same direction.                                  |
-//| It works for EURUSD, EURSEK and GBPUSD.                          |
+//| When the 48th crosses below the 96th it goes short.              |
+//| Long trades close when the 24th crosses below the 48th.          |
+//| Short trades close when the 24th crosses above the 48th.         |
+//| It works for EURUSD and GBPUSD.                                  |
 //+------------------------------------------------------------------+
 #include <stderror.mqh>
 #include <stdlib.mqh>
@@ -25,30 +25,35 @@
 //+------------------------------------------------------------------+
 double USER_TAKE_PROFIT=0.0;
 double USER_STOP_LOSS=0.0;
-int USER_MAGIC_LONG=901;                                             // Identifies this EA's long positions
-int USER_MAGIC_SHORT=902;                                            // Identifies this EA's short positions
+int USER_MAGIC_TWODAY_LONG=901;                                      // Identifies this EA's long positions
+int USER_MAGIC_TWODAY_SHORT=902;                                     // Identifies this EA's short positions
+int USER_MAGIC_DAILY_LONG=903;                                       // Identifies this EA's long positions
+int USER_MAGIC_DAILY_SHORT=904;                                      // Identifies this EA's short positions
 extern int USER_TAKE_PROFIT_PIPS=1800;                               // Take Profit in pips
-extern int USER_STOP_LOSS_PIPS=200;                                  // Stop Loss in pips
-extern int USER_SEK_MULTIPLIER=1;                                    // For EURSEK, set to 10.
+extern int USER_STOP_LOSS_PIPS=1000;                                 // Stop Loss in pips
 extern double USER_POSITION=0.01;                                    // Position size
+extern bool USER_ENABLE_DAILY_SMA=true;                              // Enable crosses between 24h and 48h SMA
+extern bool USER_ENABLE_TWODAY_SMA=true;                             // Enable crosses between 48h and 96h SMA
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
 
 //+------------------------------------------------------------------+
 //| Indicator variables, re-calculated on every new bar.             |
 //+------------------------------------------------------------------+
-double shortSMA = 0.0, shortSMA_prev = 0.0;
-double longSMA = 0.0, longSMA_prev = 0.0;
+double dailySMA = 0.0, dailySMA_prev = 0.0;
+double twodaySMA = 0.0, twodaySMA_prev = 0.0;
+double fourdaySMA = 0.0, fourdaySMA_prev = 0.0;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   USER_TAKE_PROFIT = USER_SEK_MULTIPLIER * USER_TAKE_PROFIT_PIPS * Point;
-   USER_STOP_LOSS = USER_SEK_MULTIPLIER * USER_STOP_LOSS_PIPS * Point;
+   USER_TAKE_PROFIT = USER_TAKE_PROFIT_PIPS * Point;
+   USER_STOP_LOSS = USER_STOP_LOSS_PIPS * Point;
    
-   Alert("Init Symbol=", Symbol(), ", TP=", USER_TAKE_PROFIT,
-      ", SL=", USER_STOP_LOSS, ", SEK Multiplier=", USER_SEK_MULTIPLIER);
+   Alert("Init Symbol=", Symbol(),
+      ", TP=", USER_TAKE_PROFIT,
+      ", SL=", USER_STOP_LOSS);
    
    return(INIT_SUCCEEDED);
 }
@@ -71,74 +76,153 @@ void OnTick()
       return;
       
    // Re-calculate indicators
-   shortSMA = NormalizeDouble(iMA(NULL, 0, 48, 0, MODE_SMA, PRICE_CLOSE, 1), Digits);
-   shortSMA_prev = NormalizeDouble(iMA(NULL, 0, 48, 0, MODE_SMA, PRICE_CLOSE, 2), Digits);
-   longSMA = NormalizeDouble(iMA(NULL, 0, 96, 0, MODE_SMA, PRICE_CLOSE, 1), Digits);
-   longSMA_prev = NormalizeDouble(iMA(NULL, 0, 96, 0, MODE_SMA, PRICE_CLOSE, 2), Digits);
+   dailySMA = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 1), Digits);
+   dailySMA_prev = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 2), Digits);
+   twodaySMA = NormalizeDouble(iMA(NULL, 0, 48, 0, MODE_SMA, PRICE_CLOSE, 1), Digits);
+   twodaySMA_prev = NormalizeDouble(iMA(NULL, 0, 48, 0, MODE_SMA, PRICE_CLOSE, 2), Digits);
+   fourdaySMA = NormalizeDouble(iMA(NULL, 0, 96, 0, MODE_SMA, PRICE_CLOSE, 1), Digits);
+   fourdaySMA_prev = NormalizeDouble(iMA(NULL, 0, 96, 0, MODE_SMA, PRICE_CLOSE, 2), Digits);
    
-   Log();
-      
-   // Check conditions to open long
-   if (UptrendOpeningConfirmed())
-   {
-      OpenLong(
-         CalculatePositionSize(USER_MAGIC_LONG),
-         USER_MAGIC_LONG,
-         "MATrigger",
-         CalculateSL(USER_MAGIC_LONG),
-         CalculateTP(USER_MAGIC_LONG));
-   }
+   // ----------------------------------------------------
+   // Check conditions to open or close long SMA crosses
+   // ----------------------------------------------------
+   
+   // Open Long TwoDay
    if (
-      LongIsOpen(USER_MAGIC_LONG) &&
-      longSMA > shortSMA
+      USER_ENABLE_TWODAY_SMA &&
+      OpenTwoDaySMALong()
    ){
+      Log("OpenTwoDaySMALong");
+      OpenLong(
+         CalculatePositionSize(USER_MAGIC_TWODAY_LONG),
+         USER_MAGIC_TWODAY_LONG,
+         "MATrigger",
+         CalculateSL(USER_MAGIC_TWODAY_LONG),
+         CalculateTP(USER_MAGIC_TWODAY_LONG));
+   }
+   
+   // Close Long TwoDay
+   if (
+      LongIsOpen(USER_MAGIC_TWODAY_LONG) &&
+      dailySMA <= twodaySMA
+   ){
+      Log("CloseTwoDaySMALong");
       int longs[10], i=0;
-      FindLong(USER_MAGIC_LONG, longs);
+      FindLong(USER_MAGIC_TWODAY_LONG, longs);
       while (longs[i]>-1)
       {
          int ticket = longs[i];
-         CloseLong(ticket, CalculatePositionSize(USER_MAGIC_LONG));
+         CloseLong(ticket, CalculatePositionSize(USER_MAGIC_TWODAY_LONG));
+         i++;
+      }
+   }
+   
+   // Open Long Daily
+   if (
+      USER_ENABLE_DAILY_SMA &&
+      OpenDailySMALong()
+   ){
+      Log("OpenDailySMALong");
+      OpenLong(
+         CalculatePositionSize(USER_MAGIC_DAILY_LONG),
+         USER_MAGIC_DAILY_LONG,
+         "DailyMATrigger",
+         CalculateSL(USER_MAGIC_DAILY_LONG),
+         CalculateTP(USER_MAGIC_DAILY_LONG));
+   }
+   
+   // Close Long Daily
+   if (
+      LongIsOpen(USER_MAGIC_DAILY_LONG) &&
+      dailySMA <= twodaySMA
+   ){
+      Log("CloseDailySMALong");
+      int longs[10], i=0;
+      FindLong(USER_MAGIC_DAILY_LONG, longs);
+      while (longs[i]>-1)
+      {
+         int ticket = longs[i];
+         CloseLong(ticket, CalculatePositionSize(USER_MAGIC_DAILY_LONG));
          i++;
       }
    }
 
-   // Check conditions to open short
-   if (DowntrendOpeningConfirmed())
-   {
-      OpenShort(
-         CalculatePositionSize(USER_MAGIC_SHORT),
-         USER_MAGIC_SHORT,
-         "MATrigger",
-         CalculateSL(USER_MAGIC_SHORT),
-         CalculateTP(USER_MAGIC_SHORT));
-   }
+   // ----------------------------------------------------
+   // Check conditions to open or close short SMA crosses
+   // ----------------------------------------------------
+   
+   // Open Short TwoDay
    if (
-      ShortIsOpen(USER_MAGIC_SHORT) &&
-      longSMA < shortSMA
+      USER_ENABLE_TWODAY_SMA &&
+      OpenTwoDaySMAShort()
    ){
+      Log("OpenTwoDaySMAShort");
+      OpenShort(
+         CalculatePositionSize(USER_MAGIC_TWODAY_SHORT),
+         USER_MAGIC_TWODAY_SHORT,
+         "MATrigger",
+         CalculateSL(USER_MAGIC_TWODAY_SHORT),
+         CalculateTP(USER_MAGIC_TWODAY_SHORT));
+   }
+   
+   // Close Short TwoDay
+   if (
+      ShortIsOpen(USER_MAGIC_TWODAY_SHORT) &&
+      dailySMA >= twodaySMA
+   ){
+      Log("CloseTwoDaySMAShort");
       int shorts[10], i=0;
-      FindShort(USER_MAGIC_SHORT, shorts);
+      FindShort(USER_MAGIC_TWODAY_SHORT, shorts);
       while (shorts[i]>-1)
       {
          int ticket = shorts[i];
-         CloseShort(ticket, CalculatePositionSize(USER_MAGIC_SHORT));
+         CloseShort(ticket, CalculatePositionSize(USER_MAGIC_TWODAY_SHORT));
          i++;
       }
    }
    
-   TrailSL(USER_MAGIC_LONG);
-   TrailSL(USER_MAGIC_SHORT);
+   // Open Short Daily
+   if (
+      USER_ENABLE_DAILY_SMA &&
+      OpenDailySMAShort()
+   ){
+      Log("OpenDailySMAShort");
+      OpenShort(
+         CalculatePositionSize(USER_MAGIC_DAILY_SHORT),
+         USER_MAGIC_DAILY_SHORT,
+         "DailyMATrigger",
+         CalculateSL(USER_MAGIC_DAILY_SHORT),
+         CalculateTP(USER_MAGIC_DAILY_SHORT));
+   }
+   
+   // Close Short Daily
+   if (
+      ShortIsOpen(USER_MAGIC_DAILY_SHORT) &&
+      dailySMA >= twodaySMA
+   ){
+      Log("CloseDailySMAShort");
+      int shorts[10], i=0;
+      FindShort(USER_MAGIC_DAILY_SHORT, shorts);
+      while (shorts[i]>-1)
+      {
+         int ticket = shorts[i];
+         CloseShort(ticket, CalculatePositionSize(USER_MAGIC_DAILY_SHORT));
+         i++;
+      }
+   }
 }
 
 //+------------------------------------------------------------------+
 //| User function NewBar()                                           |
 //| Returns true when a new bar has just formed                      |
 //+------------------------------------------------------------------+
-void Log()
+void Log(string tag)
 {
    if (USER_LOGGER_DEBUG)
    {
-      Print(Symbol(), ": shortSMA=", shortSMA, ", longSMA=", longSMA);
+      Print(tag, ": dailySMA=", dailySMA, ", dailySMA_prev=", dailySMA_prev);
+      Print(tag, ": twodaySMA=", twodaySMA, ", twodaySMA_prev=", twodaySMA_prev);
+      Print(tag, ": fourdaySMA=", fourdaySMA, ", fourdaySMA_prev=", fourdaySMA_prev);
    }
 }
 
@@ -183,28 +267,46 @@ double LengthHL(int shift)
 }
 
 //+------------------------------------------------------------------+
-//| User function UptrendConfirmed()                                 |
+//| User function OpenTwoDaySMALong(), OpenDailySMALong().           |
 //| Returns true when long opening conditions are met according to   |
 //| EA rules                                                         |
 //+------------------------------------------------------------------+
-bool UptrendOpeningConfirmed()
+bool OpenTwoDaySMALong()
 {  
    return (
-         shortSMA > longSMA &&
-         shortSMA_prev < longSMA_prev
+         twodaySMA > fourdaySMA &&
+         twodaySMA_prev < fourdaySMA_prev
+   );
+}
+
+bool OpenDailySMALong()
+{  
+   return (
+         dailySMA > twodaySMA &&
+         dailySMA_prev < twodaySMA_prev &&
+         Open[0] > dailySMA
       );
 }
 
 //+------------------------------------------------------------------+
-//| User function DowntrendOpeningConfirmed()                        |
+//| User function OpenTwoDaySMAShort(), OpenDailySMAShort().         |
 //| Returns true when short opening conditions are met according to  |
 //| EA rules                                                         |
 //+------------------------------------------------------------------+
-bool DowntrendOpeningConfirmed()
+bool OpenTwoDaySMAShort()
 {
    return (
-         shortSMA < longSMA &&
-         shortSMA_prev > longSMA_prev
+         twodaySMA < fourdaySMA &&
+         twodaySMA_prev > fourdaySMA_prev
+      );
+}
+
+bool OpenDailySMAShort()
+{
+   return (
+         dailySMA < twodaySMA &&
+         dailySMA_prev > twodaySMA_prev &&
+         Open[0] < dailySMA
       );
 }
 
@@ -383,7 +485,17 @@ double CalculatePositionSize(int magic)
 //+------------------------------------------------------------------+
 double CalculateSL(int magic)
 {
-   return USER_STOP_LOSS;
+   if (magic == USER_MAGIC_TWODAY_LONG) {
+      return USER_STOP_LOSS;
+   } else if (magic == USER_MAGIC_TWODAY_SHORT) {
+      return USER_STOP_LOSS;
+   } else if (magic == USER_MAGIC_DAILY_LONG) {
+      return USER_STOP_LOSS;
+   } else if (magic == USER_MAGIC_DAILY_SHORT) {
+      return USER_STOP_LOSS;
+   } else {
+      return USER_STOP_LOSS;
+   }
 }
 
 //+------------------------------------------------------------------+
@@ -391,7 +503,17 @@ double CalculateSL(int magic)
 //+------------------------------------------------------------------+
 double CalculateTP(int magic)
 {
-   return USER_TAKE_PROFIT;
+   if (magic == USER_MAGIC_TWODAY_LONG) {
+      return USER_TAKE_PROFIT;
+   } else if (magic == USER_MAGIC_TWODAY_SHORT) {
+      return USER_TAKE_PROFIT;
+   } else if (magic == USER_MAGIC_DAILY_LONG) {
+      return USER_TAKE_PROFIT;
+   } else if (magic == USER_MAGIC_DAILY_SHORT) {
+      return USER_TAKE_PROFIT;
+   } else {
+      return USER_TAKE_PROFIT;
+   }
 }
 
 
@@ -476,7 +598,7 @@ int OpenLong(double positionSize, int magic, string magicName, double SL, double
          positionSize,
          Ask,
          3,
-         Bid-SL,
+         SL==0?0:Bid-SL,
          Bid+TP,
          magicName,
          magic);
@@ -501,7 +623,7 @@ int OpenLong(double positionSize, int magic, string magicName, double SL, double
             continue;
       }
       Alert("OpenLong ", Symbol(), ": Ask=", Ask,", SL=",
-         Bid-SL, ", TP=", Bid+TP);
+         SL==0?0:Bid-SL, ", TP=", Bid+TP);
       Alert("OpenLong ", Symbol(), ": Error ", Error,
          " ", ErrorDescription(Error));
       break;
@@ -524,7 +646,7 @@ int OpenShort(double positionSize, int magic, string magicName, double SL, doubl
          positionSize,
          Bid,
          3,
-         Ask+SL,
+         SL==0?0:Ask+SL,
          Ask-TP,
          magicName,
          magic);
@@ -549,7 +671,7 @@ int OpenShort(double positionSize, int magic, string magicName, double SL, doubl
             continue;
       }
       Alert("OpenShort ", Symbol(), ": Bid=", Bid, ", SL=",
-         Ask+SL, ", TP=", Ask-TP);
+         SL==0?0:Ask+SL, ", TP=", Ask-TP);
       Alert("OpenShort ", Symbol(), ": Error ", Error,
          " ", ErrorDescription(Error));
       break;
