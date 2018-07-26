@@ -8,21 +8,21 @@
 //| www.babypips.com/learn/forex/elementary#japanese-candle-sticks   |
 //|                                                                  |
 //| The patterns this EA trades are (magic numbers in parenthesis):  |
-//| o Bullish (1000) and Bearish (1001) Engulfing                    |
 //| o Three White Soldiers (1002) and Three Black Crows (1003)       |
 //| o Morning (1004) and Evening (1005) Star                         |
-//| o Three Inside Up (1006) and Down (1007)                         |
 //|                                                                  |
 //| The rules applied by this EA are:                                |
 //| o Whenever a pattern is detected, a trade opens in the direction |
-//|   the pattern dictates, unless a trade is already open in that   |
-//|   direction for this pattern.                                    |
+//|   the pattern dictates, unless a trade is already open for that  |
+//|   pattern.                                                       |
 //| o Stop loss is calculated for each pattern, the general rule is  |
 //|   that the SL is set away from the first candlestick at the      |
 //|   pattern's height, but there are variations. Check the code.    |
-//| o Take Profit is calculated for each pattern similarly to the SL,|
-//|   multiplied by USER_TAKE_PROFIT_MULTIPLIER. For EURUSD set to 2,|
-//|   for GBPUSD set to 1                                            |
+//| o Take Profit is fixed to USER_TAKE_PROFIT for all patterns.     |
+//| o Trailing SL and TP rules:                                      |
+//|   - At 1/3 the distance to TP, SL is moved to OP.                |
+//|   - At 2/3 the distance to TP, SL is moved to 1/3 distance to TP |
+//|     and TP 1/3 the distance further                              |
 //+------------------------------------------------------------------+
 #include <stderror.mqh>
 #include <stdlib.mqh>
@@ -42,7 +42,6 @@ int USER_MAGIC_MORNING_STAR=1004;
 int USER_MAGIC_EVENING_STAR=1005;
 extern int USER_TAKE_PROFIT_PIPS=1800;                               // Default Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=150;                                  // Default Stop Loss in pips
-extern int USER_SEK_MULTIPLIER=1;                                    // For EURSEK, set to 10.
 extern double USER_POSITION=0.01;                                    // Base of position size calculations
 extern bool ENABLE_THREE_WHITE_SOLDIERS=true;
 extern bool ENABLE_THREE_BLACK_CROWS=true;
@@ -55,20 +54,14 @@ extern int USER_BACK_PERIODS=40;                                     // How many
 //| Indicator variables, re-calculated on every new bar.             |
 //+------------------------------------------------------------------+
 
-double ma24_now = 0.0;
-double ma24_8hago = 0.0;
-double ma24_12hago = 0.0;
-double ma24_24hago = 0.0;
-double ma24_48hago = 0.0;
-double ma24_72hago = 0.0;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   USER_TAKE_PROFIT = USER_SEK_MULTIPLIER * USER_TAKE_PROFIT_PIPS * Point;
-   USER_STOP_LOSS = USER_SEK_MULTIPLIER * USER_STOP_LOSS_PIPS * Point;
+   USER_TAKE_PROFIT = USER_TAKE_PROFIT_PIPS * Point;
+   USER_STOP_LOSS = USER_STOP_LOSS_PIPS * Point;
    
    Alert("Init Symbol=", Symbol(), ", Default TP=", USER_TAKE_PROFIT,
       ", Default SL=", USER_STOP_LOSS);
@@ -94,15 +87,6 @@ void OnTick()
       return;
    
    Log();
-   
-   
-   // Re-calculate indicators
-   ma24_now = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 0), Digits);
-   ma24_8hago = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 8), Digits);
-   ma24_12hago = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 12), Digits);
-   ma24_24hago = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 24), Digits);
-   ma24_48hago = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 48), Digits);
-   ma24_72hago = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 72), Digits);
      
    //+---------------------------------------------------------------+
    //| Three White Soldiers                                          |

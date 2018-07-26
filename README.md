@@ -4,10 +4,11 @@ The EAs take advantage of built-in Technical Indicators in MT4 to perform automa
 Since automated trading performs trades following strict technical rules, it removes all emotional bias and, in theory, it will perform better than inexperienced traders.
 
 In summary, the EAs in this project are:
-* MATrigger: Compares the values of SMA24 to SMA48 and goes long or short at a a cross.
+* MATrigger: Compares the values of SMA24 to SMA48 and SMA48 to SMA96 and goes long or short at a cross.
+* CandlestickPatterns: Trades the 3 White Solders, 3 Black Crows, Morning Star and Evening Star patterns.
 * Reaper: Closes all trades to secure profits when profits are between 10% and 15% of the current balance.
 
-The first EA works on the hourly chart of three Forex pairs, EURUSD, EURSEK and GBPUSD, while the Reaper works on the minute chart of any Forex pair. The Reaper will not open any trade, it will just monitor the current profit and reap when a significant percentage of the balance is won.
+The first EA works on the hourly chart of two Forex pairs, EURUSD and GBPUSD, while the Reaper works on the minute chart of any Forex pair. The Reaper will not open any trade, it will just monitor the current profit and reap when a significant percentage of the balance is won.
 
 ## Risk Warning
 
