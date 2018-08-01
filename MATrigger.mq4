@@ -25,6 +25,7 @@
 //+------------------------------------------------------------------+
 double USER_TAKE_PROFIT=0.0;
 double USER_STOP_LOSS=0.0;
+double USER_MAX_OPENING_SMA_DISTANCE=0.0;
 int USER_MAGIC_TWODAY_LONG=901;                                      // Identifies this EA's long positions
 int USER_MAGIC_TWODAY_SHORT=902;                                     // Identifies this EA's short positions
 int USER_MAGIC_DAILY_LONG=903;                                       // Identifies this EA's long positions
@@ -32,6 +33,7 @@ int USER_MAGIC_DAILY_SHORT=904;                                      // Identifi
 extern int USER_TAKE_PROFIT_PIPS=1800;                               // Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=1000;                                 // Stop Loss in pips
 extern double USER_POSITION=0.01;                                    // Position size
+extern int USER_MAX_OPENING_SMA_DISTANCE_PIPS=350;                   // Maximum distance between opening price and SMA
 extern bool USER_ENABLE_DAILY_SMA=true;                              // Enable crosses between 24h and 48h SMA
 extern bool USER_ENABLE_TWODAY_SMA=true;                             // Enable crosses between 48h and 96h SMA
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
@@ -50,10 +52,12 @@ int OnInit()
 {
    USER_TAKE_PROFIT = USER_TAKE_PROFIT_PIPS * Point;
    USER_STOP_LOSS = USER_STOP_LOSS_PIPS * Point;
+   USER_MAX_OPENING_SMA_DISTANCE = USER_MAX_OPENING_SMA_DISTANCE_PIPS * Point;
    
    Alert("Init Symbol=", Symbol(),
       ", TP=", USER_TAKE_PROFIT,
-      ", SL=", USER_STOP_LOSS);
+      ", SL=", USER_STOP_LOSS,
+      ", MAX_OPENING_SMA_DISTANCE=", USER_MAX_OPENING_SMA_DISTANCE);
    
    return(INIT_SUCCEEDED);
 }
@@ -284,7 +288,8 @@ bool OpenDailySMALong()
    return (
          dailySMA > twodaySMA &&
          dailySMA_prev < twodaySMA_prev &&
-         Open[0] > dailySMA
+         Open[0] > dailySMA &&
+         Open[0] - dailySMA < USER_MAX_OPENING_SMA_DISTANCE
       );
 }
 
@@ -306,7 +311,8 @@ bool OpenDailySMAShort()
    return (
          dailySMA < twodaySMA &&
          dailySMA_prev > twodaySMA_prev &&
-         Open[0] < dailySMA
+         Open[0] < dailySMA &&
+         dailySMA - Open[0] < USER_MAX_OPENING_SMA_DISTANCE
       );
 }
 
@@ -533,8 +539,8 @@ void TrailSL(int magic)
          double openPrice = FindOpenPrice(ticketLong);
          double takeProfit = FindTakeProfit(ticketLong);
          double stopLoss = FindStopLoss(ticketLong);
-         if (
-               MathAbs(Open[0] - openPrice) > MathAbs(takeProfit - openPrice) / 4 &&
+        if (
+               Open[0] - openPrice > MathAbs(takeProfit - openPrice) / 4 &&
                stopLoss < openPrice
             )
          {
@@ -542,7 +548,7 @@ void TrailSL(int magic)
          }
          if (
                stopLoss <= openPrice &&
-               MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3
+               Open[0] - openPrice > 2 * MathAbs(takeProfit - openPrice) / 3
             )
          {
             TrailStopLoss(ticketLong, NormalizeDouble(openPrice + MathAbs(takeProfit - openPrice)/3, Digits));
@@ -564,7 +570,7 @@ void TrailSL(int magic)
          double takeProfit = FindTakeProfit(ticketShort);
          double stopLoss = FindStopLoss(ticketShort);
          if (
-               MathAbs(Open[0] - openPrice) > MathAbs(takeProfit - openPrice) / 4 &&
+               openPrice - Open[0] > MathAbs(takeProfit - openPrice) / 4 &&
                stopLoss > openPrice
             )
          {
@@ -572,7 +578,7 @@ void TrailSL(int magic)
          }
          if (
                stopLoss >= openPrice &&
-               MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3
+               openPrice - Open[0] > 2 * MathAbs(takeProfit - openPrice) / 3
             )
          {
             TrailStopLoss(ticketShort, NormalizeDouble(openPrice - MathAbs(takeProfit - openPrice)/3, Digits));
