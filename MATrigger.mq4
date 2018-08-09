@@ -30,8 +30,8 @@ extern int USER_TAKE_PROFIT_PIPS=1800;                               // Take Pro
 extern int USER_STOP_LOSS_PIPS=1000;                                 // Stop Loss in pips
 extern double USER_POSITION=0.01;                                    // Position size
 extern int USER_MAX_OPENING_SMA_DISTANCE_PIPS=350;                   // Maximum distance between opening price and SMA
-extern bool USER_ENABLE_DAILY_SMA=true;                              // Enable crosses between 24h and 48h SMA
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
+extern bool USER_LOGGER_ACTION=false;                                // Enable or disable action log
 
 //+------------------------------------------------------------------+
 //| Indicator variables, re-calculated on every new bar.             |
@@ -72,6 +72,8 @@ void OnTick()
    // This EA only considers trading when a new bar opens
    if (!NewBar())
       return;
+   
+   debugLog("NewBar");
       
    // Re-calculate indicators
    dailySMA = NormalizeDouble(iMA(NULL, 0, 24, 0, MODE_SMA, PRICE_CLOSE, 1), Digits);
@@ -84,10 +86,9 @@ void OnTick()
    // ----------------------------------------------------   
    // Open Long Daily
    if (
-      USER_ENABLE_DAILY_SMA &&
       OpenDailySMALong()
    ){
-      Log("OpenDailySMALong");
+      actionLog("OpenDailySMALong");
       OpenLong(
          CalculatePositionSize(USER_MAGIC_DAILY_LONG),
          USER_MAGIC_DAILY_LONG,
@@ -101,7 +102,7 @@ void OnTick()
       LongIsOpen(USER_MAGIC_DAILY_LONG) &&
       dailySMA <= twodaySMA
    ){
-      Log("CloseDailySMALong");
+      actionLog("CloseDailySMALong");
       int longs[10], i=0;
       FindLong(USER_MAGIC_DAILY_LONG, longs);
       while (longs[i]>-1)
@@ -117,10 +118,9 @@ void OnTick()
    // ----------------------------------------------------   
    // Open Short Daily
    if (
-      USER_ENABLE_DAILY_SMA &&
       OpenDailySMAShort()
    ){
-      Log("OpenDailySMAShort");
+      actionLog("OpenDailySMAShort");
       OpenShort(
          CalculatePositionSize(USER_MAGIC_DAILY_SHORT),
          USER_MAGIC_DAILY_SHORT,
@@ -134,7 +134,7 @@ void OnTick()
       ShortIsOpen(USER_MAGIC_DAILY_SHORT) &&
       dailySMA >= twodaySMA
    ){
-      Log("CloseDailySMAShort");
+      actionLog("CloseDailySMAShort");
       int shorts[10], i=0;
       FindShort(USER_MAGIC_DAILY_SHORT, shorts);
       while (shorts[i]>-1)
@@ -147,16 +147,29 @@ void OnTick()
 }
 
 //+------------------------------------------------------------------+
-//| User function NewBar()                                           |
-//| Returns true when a new bar has just formed                      |
+//| Logging functions()                                              |
 //+------------------------------------------------------------------+
 void Log(string tag)
 {
    if (USER_LOGGER_DEBUG)
    {
+      Print(tag, ": Open[0]=", Open[0]);
       Print(tag, ": dailySMA=", dailySMA, ", dailySMA_prev=", dailySMA_prev);
       Print(tag, ": twodaySMA=", twodaySMA, ", twodaySMA_prev=", twodaySMA_prev);
+      Print(tag, ": OpenLong=", OpenDailySMALong(), ", OpenShort=", OpenDailySMAShort());
    }
+}
+
+void debugLog(string tag)
+{
+   if (USER_LOGGER_DEBUG)
+      Log(tag);
+}
+
+void actionLog(string tag)
+{
+   if (USER_LOGGER_ACTION)
+      Log(tag);
 }
 
 //+------------------------------------------------------------------+
