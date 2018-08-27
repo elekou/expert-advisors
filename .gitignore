@@ -1,0 +1,4 @@
+# Compiled files
+*.ex4
+# This file in particular
+mqlcache.dat
