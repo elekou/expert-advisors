@@ -24,8 +24,8 @@
 double USER_TAKE_PROFIT=0.0;
 double USER_STOP_LOSS=0.0;
 double USER_MAX_OPENING_SMA_DISTANCE=0.0;
-int USER_MAGIC_DAILY_LONG=903;                                       // Identifies this EA's long positions
-int USER_MAGIC_DAILY_SHORT=904;                                      // Identifies this EA's short positions
+int USER_MAGIC_DAILY_LONG=801;                                       // Identifies this EA's long positions
+int USER_MAGIC_DAILY_SHORT=802;                                      // Identifies this EA's short positions
 extern int USER_TAKE_PROFIT_PIPS=1800;                               // Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=1000;                                 // Stop Loss in pips
 extern double USER_POSITION=0.01;                                    // Position size
@@ -92,7 +92,7 @@ void OnTick()
       OpenLong(
          CalculatePositionSize(USER_MAGIC_DAILY_LONG),
          USER_MAGIC_DAILY_LONG,
-         "DailyMATrigger",
+         "MATrigger",
          CalculateSL(USER_MAGIC_DAILY_LONG),
          CalculateTP(USER_MAGIC_DAILY_LONG));
    }
@@ -124,7 +124,7 @@ void OnTick()
       OpenShort(
          CalculatePositionSize(USER_MAGIC_DAILY_SHORT),
          USER_MAGIC_DAILY_SHORT,
-         "DailyMATrigger",
+         "MATrigger",
          CalculateSL(USER_MAGIC_DAILY_SHORT),
          CalculateTP(USER_MAGIC_DAILY_SHORT));
    }
