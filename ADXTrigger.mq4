@@ -1,9 +1,9 @@
 //+------------------------------------------------------------------+
-//|                                              ochasticTrigger.mq4 |
+//|                                                   ADXTrigger.mq4 |
 //|                                              lefterisk@gmail.com |
 //|                                              http://www.mql4.com |
 //+------------------------------------------------------------------+
-//| It works for EURUSD and GBPUSD.                                  |
+//| Daily ADX crossing strategy for EURUSD                           |
 //+------------------------------------------------------------------+
 #include <stderror.mqh>
 #include <stdlib.mqh>
@@ -17,9 +17,9 @@
 //+------------------------------------------------------------------+
 double USER_TAKE_PROFIT=0.0;
 double USER_STOP_LOSS=0.0;
-int USER_MAGIC_DAILY_LONG=901;                                       // Identifies this EA's long positions
-int USER_MAGIC_DAILY_SHORT=902;                                      // Identifies this EA's short positions
-extern int USER_TAKE_PROFIT_PIPS=4000;                               // Take Profit in pips
+int USER_MAGIC_DAILY_LONG=903;                                       // Identifies this EA's long positions
+int USER_MAGIC_DAILY_SHORT=904;                                      // Identifies this EA's short positions
+extern int USER_TAKE_PROFIT_PIPS=2000;                               // Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=1000;                                 // Stop Loss in pips
 extern double USER_POSITION=0.01;                                    // Position size
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
