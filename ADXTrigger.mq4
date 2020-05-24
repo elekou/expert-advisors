@@ -84,7 +84,7 @@ void OnTick()
       OpenLong(
          CalculatePositionSize(USER_MAGIC_DAILY_LONG),
          USER_MAGIC_DAILY_LONG,
-         "MAStochasticTrigger",
+         "ADXTriggerDaily",
          CalculateSL(USER_MAGIC_DAILY_LONG),
          CalculateTP(USER_MAGIC_DAILY_LONG));
    }
@@ -117,7 +117,7 @@ void OnTick()
       OpenShort(
          CalculatePositionSize(USER_MAGIC_DAILY_SHORT),
          USER_MAGIC_DAILY_SHORT,
-         "MAStochasticTrigger",
+         "ADXTriggerDaily",
          CalculateSL(USER_MAGIC_DAILY_SHORT),
          CalculateTP(USER_MAGIC_DAILY_SHORT));
    }
