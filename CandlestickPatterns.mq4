@@ -40,7 +40,7 @@ int USER_MAGIC_THREE_WHITE_SOLDIERS=1002;
 int USER_MAGIC_THREE_BLACK_CROWS=1003;
 int USER_MAGIC_MORNING_STAR=1004;
 int USER_MAGIC_EVENING_STAR=1005;
-extern int USER_TAKE_PROFIT_PIPS=1800;                               // Default Take Profit in pips
+extern int USER_TAKE_PROFIT_PIPS=1000;                               // Default Take Profit in pips
 extern int USER_STOP_LOSS_PIPS=150;                                  // Default Stop Loss in pips
 extern double USER_POSITION=0.01;                                    // Base of position size calculations
 extern bool ENABLE_THREE_WHITE_SOLDIERS=true;
@@ -48,7 +48,7 @@ extern bool ENABLE_THREE_BLACK_CROWS=true;
 extern bool ENABLE_MORNING_STAR=true;
 extern bool ENABLE_EVENING_STAR=true;
 extern bool USER_LOGGER_DEBUG=false;                                 // Enable or disable debug log
-extern int USER_BACK_PERIODS=40;                                     // How many hours back to check price for support/resistance
+extern int USER_BACK_PERIODS=7;                                      // How many periods back to check price for support/resistance
 
 //+------------------------------------------------------------------+
 //| Indicator variables, re-calculated on every new bar.             |
@@ -559,6 +559,7 @@ void TrailSL(int magic)
       double takeProfit = FindTakeProfit(ticketLong);
       double stopLoss = FindStopLoss(ticketLong);
       if (
+            Open[0] > openPrice &&
             MathAbs(Open[0] - openPrice) > MathAbs(takeProfit - openPrice) / 3 &&
             stopLoss < openPrice
          )
@@ -566,6 +567,7 @@ void TrailSL(int magic)
          TrailStopLoss(ticketLong, NormalizeDouble(openPrice, Digits));
       }
       if (
+            Open[0] > openPrice &&
             MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3 &&
             stopLoss <= openPrice
          )
@@ -583,6 +585,7 @@ void TrailSL(int magic)
       double takeProfit = FindTakeProfit(ticketShort);
       double stopLoss = FindStopLoss(ticketShort);
       if (
+            Open[0] < openPrice &&
             MathAbs(Open[0] - openPrice) > MathAbs(takeProfit - openPrice) / 3 &&
             stopLoss > openPrice
          )
@@ -590,6 +593,7 @@ void TrailSL(int magic)
          TrailStopLoss(ticketShort, NormalizeDouble(openPrice, Digits));
       }
       if (
+            Open[0] < openPrice &&
             MathAbs(Open[0] - openPrice) > 2 * MathAbs(takeProfit - openPrice) / 3 &&
             stopLoss >= openPrice
          )
