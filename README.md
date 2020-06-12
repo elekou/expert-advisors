@@ -1,14 +1,14 @@
 # expert-advisors
 This project contains a set of MetaTrader 4 (MT4) expert advisors (EAs), currently undergoing demo period.
-The EAs take advantage of built-in Technical Indicators in MT4 to perform automated trades on EURUSD and  GBPUSD Forex pairs.
+The EAs take advantage of built-in Technical Indicators in MT4 to perform automated trades on EURUSD Forex pair.
 Since automated trading performs trades following strict technical rules, it removes all emotional bias and, in theory, it will perform better than inexperienced traders.
 
 In summary, the EAs in this project are:
-* MATrigger: Compares the values of SMA24 to SMA48 and SMA48 to SMA96 and goes long or short at a cross.
-* CandlestickPatterns: Trades the 3 White Solders, 3 Black Crows, Morning Star and Evening Star patterns.
-* Reaper: Closes all trades to secure profits when profits are between 10% and 15% of the current balance.
-
-The first EA works on the hourly chart of two Forex pairs, EURUSD and GBPUSD, while the Reaper works on the minute chart of any Forex pair. The Reaper will not open any trade, it will just monitor the current profit and reap when a significant percentage of the balance is won.
+* MATrigger: Compares the values of SMA24 to SMA48 and goes long or short at a cross. Tested on EURUSD D1.
+* CandlestickPatterns: Trades the 3 White Solders, 3 Black Crows, Morning Star and Evening Star patterns. Tested on EURUSD D1.
+* ADXTrigger: Catches momentum building up. Opens long/short when adxp/adxm move above 25.0 and adx is below 25.0. Tested on EURUSD D1.
+* MAStochasticTrigger: Opens short when Stoch(14,3,3) crosses shortly (3 periods) above 80 and long when it crosses shortly below 20. Tested on EURUSD H1
+* Reaper: Closes all trades to secure profits when profits are between 10% and 15% of the current balance. It works on the minute chart of any Forex pair. The Reaper will not open any trade, it will just monitor the current profit and reap when a significant percentage of the balance is won.
 
 ## Risk Warning
 
