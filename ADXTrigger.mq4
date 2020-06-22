@@ -145,12 +145,9 @@ void OnTick()
 //+------------------------------------------------------------------+
 void Log(string tag)
 {
-   if (USER_LOGGER_DEBUG)
-   {
       Print(tag, ": Open[0]=", Open[0]);
       Print(tag, ": stoch_main=", stoch_main, ", stoch_signal=", stoch_signal);
       Print(tag, ": OpenLong=", OpenADXLong(), ", OpenShort=", OpenADXShort());
-   }
 }
 
 void debugLog(string tag)
